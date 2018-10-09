@@ -1,2 +1,3 @@
 /cmd/cmd
 /cmd/auth
+/cmd/*.json
