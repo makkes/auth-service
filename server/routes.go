@@ -1,0 +1,44 @@
+package server
+
+import (
+	"net/http"
+
+	"github.com/makkes/handlers"
+	"github.com/makkes/services.makk.es/auth/server/middleware"
+)
+
+func handleVersion(v string) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(v))
+	}
+}
+
+func (s *Server) routes() {
+	authenticate := middleware.Authenticate(s.db)
+	appID := middleware.ApplicationID(s.db)
+	authenticatedRoutes := s.router.NewRoute().Subrouter()
+	authenticatedRoutes.Use(appID)
+	authenticatedRoutes.Use(authenticate)
+	authenticatedRoutes.HandleFunc("/account", http.HandlerFunc(s.handlers.GetCurrentAccountHandler)).Methods("GET")
+	authenticatedRoutes.HandleFunc("/accounts", http.HandlerFunc(s.handlers.GetAccountsHandler)).Methods("GET")
+	authenticatedRoutes.HandleFunc("/accounts/{id}", s.handlers.GetAccountHandler).Methods("GET")
+	authenticatedRoutes.HandleFunc("/accounts/{id}/roles", s.handlers.GetRolesHandler).Methods("GET")
+	authenticatedRoutes.HandleFunc("/apps", s.handlers.CreateApp).Methods("POST")
+	authenticatedRoutes.HandleFunc("/apps", s.handlers.GetApps).Methods("GET")
+	authenticatedRoutes.HandleFunc("/apps/{id}", s.handlers.GetAppHandler).Methods("GET")
+	authenticatedRoutes.Handle("/apps/{id}/name", handlers.ContentTypeHandler(http.HandlerFunc(s.handlers.UpdateAppNameHandler), "text/plain")).Methods("PUT")
+	authenticatedRoutes.Handle("/apps/{id}/origin", handlers.ContentTypeHandler(http.HandlerFunc(s.handlers.UpdateAppOriginHandler), "text/plain")).Methods("PUT")
+
+	openRoutes := s.router.NewRoute().Subrouter()
+	openRoutes.Use(appID)
+	openRoutes.Handle("/accounts/{id}/active", http.HandlerFunc(s.handlers.ActivateHandler)).Methods("PUT")
+	openRoutes.Handle("/accounts", handlers.ContentTypeHandler(http.HandlerFunc(s.handlers.CreateAccountHandler), "application/json")).Methods("POST")
+	openRoutes.HandleFunc("/tokens", s.handlers.CreateTokenHandler).Methods("POST")
+
+	s.router.HandleFunc("/version", handleVersion(s.version)).Methods("GET")
+
+	s.router.PathPrefix("/").Methods("OPTIONS")
+	corsHandler := handlers.CORS(handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT"}), handlers.AllowedOrigins(middleware.AllowedOrigins(s.db)), handlers.AllowedHeaders([]string{"Authorization", "X-Activation-Token", "Content-Type", "X-Application-ID"}))
+	s.router.Use(corsHandler)
+}

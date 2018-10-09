@@ -1,0 +1,8 @@
+{
+    "Linters": {
+        "vet": {
+            "Command": "go vet -composites=false"
+        }
+    },
+    "Enable": ["vet", "golint"]
+}
