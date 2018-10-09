@@ -30,7 +30,7 @@ type SMTPMailer struct {
 type MockMailer struct {
 }
 
-func NewSMTPMailer(host, port, username, password) Mailer {
+func NewSMTPMailer(host, port, username, password string) Mailer {
 	return &SMTPMailer{
 		host:     host,
 		port:     port,
