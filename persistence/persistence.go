@@ -37,7 +37,7 @@ func (id *AccountID) UnmarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue
 	}
 	uid, err := uuid.FromString(idArr[1])
 	if err != nil {
-		log.Info("Could not parse account ID %s: %s", err)
+		log.Info("Could not parse account ID %s: %s", idArr[1], err)
 		return err
 	}
 	id.UUID = uid
