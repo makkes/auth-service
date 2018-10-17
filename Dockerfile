@@ -14,6 +14,5 @@ RUN apk update && apk add ca-certificates
 
 WORKDIR /root
 COPY --from=builder /go/src/github.com/makkes/services.makk.es/auth/cmd/auth .
-COPY --from=builder /go/src/github.com/makkes/services.makk.es/auth/cmd/*.json ./
 
 CMD ["./auth"]
