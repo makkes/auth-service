@@ -1,7 +1,6 @@
 * Edit app's max accounts
 * Edit app's mail templates
 * Allow multiple origins
-* Delete an app
 * Store create and update timestamps with every item
 * Set appropriate cache headers on resources
 * Provide mail templates when creating an app

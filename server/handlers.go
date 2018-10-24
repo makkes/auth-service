@@ -38,6 +38,32 @@ func (h *Handlers) GetRolesHandler(w http.ResponseWriter, r *http.Request) {
 	//r.Context().Value(UserContextKey)
 }
 
+func (h *Handlers) DeleteAppHandler(w http.ResponseWriter, r *http.Request) {
+	appID, err := persistence.NewAppID(mux.Vars(r)["id"])
+	auth := r.Context().Value(middleware.AuthContextKey).(business.Authentication)
+	log.Info("Deleting app %s from %s", appID, auth.App.ID)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	err = h.appService.NewAuthCtx(auth).DeleteApp(appID)
+	if err != nil {
+		switch err {
+		case business.ErrAppDoesNotExist:
+			w.WriteHeader(http.StatusNotFound)
+		case business.ErrAppUpdateForbidden:
+			w.WriteHeader(http.StatusForbidden)
+		default:
+			log.Info("Error deleting app %s: %s", appID, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			io.WriteString(w, "An unknown server error occurred")
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handlers) CreateApp(w http.ResponseWriter, r *http.Request) {
 	auth := r.Context().Value(middleware.AuthContextKey).(business.Authentication)
 	authID := auth.Account.ID

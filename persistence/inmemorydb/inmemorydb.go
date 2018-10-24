@@ -123,6 +123,10 @@ func (db *InMemoryDB) SaveApp(appID persistence.AppID, name string, maxAccounts 
 	return db.apps[appID], nil
 }
 
+func (db *InMemoryDB) DeleteApp(id persistence.AppID) error {
+	return nil
+}
+
 func (db *InMemoryDB) App(appID persistence.AppID) persistence.AppContext {
 	return &InMemoryAppContext{
 		db:    db,

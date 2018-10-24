@@ -20,7 +20,7 @@ type DynamoDB struct {
 }
 
 func NewDynamoDB(tableName string) (*DynamoDB, error) {
-	logger := log.NewLogger(log.INFO, "DYNAMODB")
+	logger := log.NewDefaultLevelLogger("DYNAMODB")
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("eu-central-1"),
 		//Endpoint: aws.String("http://localhost:8000"),
@@ -82,6 +82,13 @@ func NewDynamoDB(tableName string) (*DynamoDB, error) {
 			WriteCapacityUnits: aws.Int64(10),
 		},
 		TableName: table,
+	})
+	svc.UpdateTimeToLive(&dynamodb.UpdateTimeToLiveInput{
+		TableName: table,
+		TimeToLiveSpecification: &dynamodb.TimeToLiveSpecification{
+			AttributeName: aws.String("ttl"),
+			Enabled:       aws.Bool(true),
+		},
 	})
 
 	if err != nil {
@@ -222,6 +229,53 @@ func (d *DynamoDB) App(appID persistence.AppID) persistence.AppContext {
 		db:    d,
 		appID: appID,
 	}
+}
+
+func (d *DynamoDB) DeleteApp(id persistence.AppID) error {
+	d.log.Info("Deleting app %s", id)
+	res, err := d.svc.DeleteItem(&dynamodb.DeleteItemInput{
+		TableName: d.table,
+		Key: map[string]*dynamodb.AttributeValue{
+			"appID": {
+				S: aws.String(id.ID),
+			},
+			"subID": {
+				S: aws.String("details"),
+			},
+		},
+		ReturnConsumedCapacity: aws.String(dynamodb.ReturnConsumedCapacityIndexes),
+	})
+	if err != nil {
+		d.log.Error("Error deleting app %s: %s", id, err)
+		return err
+	}
+
+	d.log.Info("Consumed capacity for deleting app: %s", res.ConsumedCapacity)
+
+	accounts := d.App(id).GetAccounts()
+	if accounts != nil && len(accounts) > 0 {
+		for _, account := range accounts {
+			res, err := d.svc.DeleteItem(&dynamodb.DeleteItemInput{
+				TableName: d.table,
+				Key: map[string]*dynamodb.AttributeValue{
+					"appID": {
+						S: aws.String(id.ID),
+					},
+					"subID": {
+						S: aws.String("account:" + account.ID.UUID.String()),
+					},
+				},
+				ReturnConsumedCapacity: aws.String(dynamodb.ReturnConsumedCapacityIndexes),
+			})
+			if err != nil {
+				d.log.Error("Error deleting account %s after deleting app %s: %s", account.ID, id, err)
+			} else {
+				d.log.Info("Consumed capacity for deleting account %s after deleting app %s: %s", account.ID, id, res.ConsumedCapacity)
+			}
+		}
+	}
+
+	return nil
 }
 
 type DynamoDBAppContext struct {

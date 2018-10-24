@@ -97,8 +97,8 @@ func TestGetAppsReturnsAllApps(t *testing.T) {
 
 	apps := db.GetApps()
 
-	assert.True(len(apps) == 2, fmt.Sprintf("Expected 2 apps but got %d", len(apps)))
-	ids := map[string]*persistence.App{apps[0].ID.ID: apps[0], apps[1].ID.ID: apps[1]}
+	assert.True(len(apps) == 3, fmt.Sprintf("Expected 3 apps but got %d", len(apps)))
+	ids := map[string]*persistence.App{apps[0].ID.ID: apps[0], apps[1].ID.ID: apps[1], apps[2].ID.ID: apps[2]}
 
 	adminApp := ids["0a791409-d58d-4175-ba02-2bdbdb8e6629"]
 	assert.NotNil(adminApp, "Expected admin app to be defined")
@@ -314,6 +314,23 @@ func TestUpdateAppOriginSucceeds(t *testing.T) {
 	assert.Nil(err, "Expected no error")
 	app = db.GetApp(appID)
 	assert.Equal(app.AllowedOrigin, "new origin", "Expected new app origin")
+}
+
+func TestDeleteAppSucceeds(t *testing.T) {
+	assert := assert.NewStrict(t)
+	db, _ := NewDynamoDB(testTableName)
+
+	appID := persistence.AppID{"c7d1a9d5-c211-4fd6-a275-393c8750cd9e"}
+	app := db.GetApp(appID)
+	assert.NotNil(app, "Expected app to exist. Perhaps the bootstrap data is broken.")
+	accounts := db.App(appID).GetAccounts()
+	assert.Equal(len(accounts), 2, "Expected two accounts to exist in app")
+	err := db.DeleteApp(appID)
+	assert.Nil(err, "Expected no error when deleting app")
+	app = db.GetApp(appID)
+	assert.Nil(app, "Expected app to be deleted")
+	accounts = db.App(appID).GetAccounts()
+	assert.Equal(len(accounts), 0, "Expected all accounts to be deleted")
 }
 
 func TestSaveAppFailsWithDuplicateAppID(t *testing.T) {

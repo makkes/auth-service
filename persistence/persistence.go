@@ -192,8 +192,7 @@ type DB interface {
 	GetApp(appID AppID) *App
 	App(appID AppID) AppContext
 	SaveApp(id AppID, name string, maxAccounts int, allowedOrigin string, mailTemplates MailTemplates, admins []AccountID, privateKey rsa.PrivateKey) (*App, error)
-	//DeleteApp(appID string) error
-	//UpdateApp(...) error
+	DeleteApp(id AppID) error
 	GetApps() []*App
 }
 

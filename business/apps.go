@@ -118,6 +118,19 @@ func (ctx AuthCtx) CreateApp(newApp AppCreation, admins []persistence.AccountID)
 	return createdApp, nil
 }
 
+func (ctx AuthCtx) DeleteApp(appID persistence.AppID) error {
+	app := ctx.svc.db.GetApp(appID)
+	if app == nil {
+		return ErrAppDoesNotExist
+	}
+	for _, adminID := range app.Admins {
+		if adminID == ctx.auth.Account.ID {
+			return ctx.svc.db.DeleteApp(appID)
+		}
+	}
+	return ErrAppUpdateForbidden
+}
+
 func (ctx AuthCtx) UpdateAppName(appID persistence.AppID, newName AppName) error {
 	app := ctx.svc.db.GetApp(appID)
 	if app == nil {

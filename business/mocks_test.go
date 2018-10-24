@@ -40,6 +40,15 @@ func (m *MockDB) SaveApp(appID persistence.AppID, name string, maxAccounts int, 
 	return arg0.(*persistence.App), args.Error(1)
 }
 
+func (m *MockDB) DeleteApp(appID persistence.AppID) error {
+	args := m.Called(appID)
+	arg0 := args.Get(0)
+	if arg0 == nil {
+		return nil
+	}
+	return arg0.(error)
+}
+
 func (m *MockDB) GetApps() []*persistence.App {
 	args := m.Called()
 	return args.Get(0).([]*persistence.App)

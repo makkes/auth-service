@@ -415,6 +415,81 @@ func TestUpdateAppOriginSucceeds(t *testing.T) {
 
 }
 
+func TestDeleteAppFailsWhenAppDoesNotExist(t *testing.T) {
+	assert := assert.NewAssert(t)
+
+	mockDB, _, accountID, appID, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	targetApp := &persistence.App{
+		ID:            appID,
+		Name:          "App Name",
+		MaxAccounts:   0,
+		AllowedOrigin: "",
+		MailTemplates: persistence.MailTemplates{},
+		Admins:        []persistence.AccountID{},
+	}
+	mockDB.On("GetApp", targetApp.ID).Return(nil)
+
+	err := NewAppService(mockDB).NewAuthCtx(Authentication{
+		Account: persistence.Account{
+			ID: accountID,
+		},
+	}).DeleteApp(targetApp.ID)
+
+	assert.NotNil(err, "Expected error when deleting app")
+	assert.Equal(ErrAppDoesNotExist, err, "Unexpected error when deleting app")
+	mockDB.AssertExpectations(t)
+}
+
+func TestDeleteAppFailsWhenUserIsNotAdmin(t *testing.T) {
+	assert := assert.NewAssert(t)
+
+	mockDB, _, accountID, appID, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	targetApp := &persistence.App{
+		ID:            appID,
+		Name:          "App Name",
+		MaxAccounts:   0,
+		AllowedOrigin: "",
+		MailTemplates: persistence.MailTemplates{},
+		Admins:        []persistence.AccountID{},
+	}
+	mockDB.On("GetApp", targetApp.ID).Return(targetApp)
+
+	err := NewAppService(mockDB).NewAuthCtx(Authentication{
+		Account: persistence.Account{
+			ID: accountID,
+		},
+	}).DeleteApp(targetApp.ID)
+
+	assert.NotNil(err, "Expected error when deleting app")
+	assert.Equal(ErrAppUpdateForbidden, err, "Unexpected error when deleting app")
+	mockDB.AssertExpectations(t)
+}
+
+func TestDeleteAppSucceeds(t *testing.T) {
+	assert := assert.NewAssert(t)
+
+	mockDB, _, accountID, appID, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	targetApp := &persistence.App{
+		ID:            appID,
+		Name:          "App Name",
+		MaxAccounts:   0,
+		AllowedOrigin: "",
+		MailTemplates: persistence.MailTemplates{},
+		Admins:        []persistence.AccountID{accountID},
+	}
+	mockDB.On("GetApp", targetApp.ID).Return(targetApp)
+	mockDB.On("DeleteApp", targetApp.ID).Return(nil)
+
+	err := NewAppService(mockDB).NewAuthCtx(Authentication{
+		Account: persistence.Account{
+			ID: accountID,
+		},
+	}).DeleteApp(targetApp.ID)
+
+	assert.Nil(err, "Expected no error when deleting app")
+	mockDB.AssertExpectations(t)
+}
+
 func TestAppCreationValidationSucceeds(t *testing.T) {
 	assert := assert.NewAssert(t)
 
