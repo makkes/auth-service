@@ -5,7 +5,7 @@ import (
 	"crypto/rsa"
 	"testing"
 
-	"github.com/justsocialapps/assert"
+	"github.com/makkes/assert"
 	"github.com/makkes/services.makk.es/auth/persistence"
 	"github.com/stretchr/testify/mock"
 )

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/justsocialapps/assert"
+	"github.com/makkes/assert"
 	"github.com/makkes/services.makk.es/auth/persistence"
 	"github.com/satori/go.uuid"
 	"github.com/stretchr/testify/mock"

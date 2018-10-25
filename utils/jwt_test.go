@@ -8,7 +8,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/justsocialapps/assert"
+	"github.com/makkes/assert"
 	"github.com/makkes/services.makk.es/auth/persistence"
 	uuid "github.com/satori/go.uuid"
 )

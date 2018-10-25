@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	log "github.com/makkes/justlib/logging"
+	log "github.com/makkes/golib/logging"
 	"github.com/makkes/services.makk.es/auth/persistence"
 )
 

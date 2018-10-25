@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	log "github.com/makkes/justlib/logging"
+	log "github.com/makkes/golib/logging"
 	"github.com/makkes/mux"
 	"github.com/makkes/services.makk.es/auth/business"
 	"github.com/makkes/services.makk.es/auth/persistence"

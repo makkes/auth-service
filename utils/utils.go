@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	log "github.com/makkes/justlib/logging"
+	log "github.com/makkes/golib/logging"
 )
 
 func ReplyJSON(w http.ResponseWriter, status int, res interface{}, headers map[string]string) {

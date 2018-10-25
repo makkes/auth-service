@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/justsocialapps/assert"
+	"github.com/makkes/assert"
 )
 
 func TestEqualTypesShouldMatch(t *testing.T) {

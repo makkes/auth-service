@@ -12,7 +12,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	log "github.com/makkes/justlib/logging"
+	log "github.com/makkes/golib/logging"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/pbkdf2"
 )
