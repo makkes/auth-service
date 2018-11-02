@@ -126,8 +126,8 @@ func (d *DynamoDB) GetApp(appID persistence.AppID) *persistence.App {
 	res, err := d.svc.GetItem(&dynamodb.GetItemInput{
 		TableName: d.table,
 		Key: map[string]*dynamodb.AttributeValue{
-			"appID": &dynamodb.AttributeValue{S: aws.String(appID.ID)},
-			"subID": &dynamodb.AttributeValue{S: aws.String("details")},
+			"appID": {S: aws.String(appID.ID)},
+			"subID": {S: aws.String("details")},
 		},
 		ReturnConsumedCapacity: aws.String(dynamodb.ReturnConsumedCapacityIndexes),
 	})
@@ -362,8 +362,8 @@ func (d *DynamoDBAppContext) GetAccount(id persistence.AccountID) *persistence.A
 	res, err := d.db.svc.GetItem(&dynamodb.GetItemInput{
 		TableName: d.db.table,
 		Key: map[string]*dynamodb.AttributeValue{
-			"appID": &dynamodb.AttributeValue{S: aws.String(d.appID.ID)},
-			"subID": &dynamodb.AttributeValue{S: aws.String("account:" + id.UUID.String())},
+			"appID": {S: aws.String(d.appID.ID)},
+			"subID": {S: aws.String("account:" + id.UUID.String())},
 		},
 		ReturnConsumedCapacity: aws.String(dynamodb.ReturnConsumedCapacityIndexes),
 	})
@@ -392,8 +392,8 @@ func (d *DynamoDBAppContext) GetAccounts() []*persistence.Account {
 	res, err := d.db.svc.Query(&dynamodb.QueryInput{
 		TableName: d.db.table,
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":appID":         &dynamodb.AttributeValue{S: aws.String(d.appID.ID)},
-			":accountPrefix": &dynamodb.AttributeValue{S: aws.String("account:")},
+			":appID":         {S: aws.String(d.appID.ID)},
+			":accountPrefix": {S: aws.String("account:")},
 		},
 		KeyConditionExpression: aws.String("appID = :appID AND begins_with(subID, :accountPrefix)"),
 		ReturnConsumedCapacity: aws.String(dynamodb.ReturnConsumedCapacityIndexes),
@@ -422,17 +422,17 @@ func (d *DynamoDBAppContext) SaveActivationToken(accountID persistence.AccountID
 	out, err := d.db.svc.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: d.db.table,
 		Key: map[string]*dynamodb.AttributeValue{
-			"appID": &dynamodb.AttributeValue{
+			"appID": {
 				S: aws.String(d.appID.ID),
 			},
-			"subID": &dynamodb.AttributeValue{
+			"subID": {
 				S: aws.String("account:" + accountID.UUID.String()),
 			},
 		},
 		ConditionExpression: aws.String("attribute_exists(subID)"),
 		UpdateExpression:    aws.String("SET activationToken = :token"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":token": &dynamodb.AttributeValue{S: aws.String(token)},
+			":token": {S: aws.String(token)},
 		},
 		ReturnConsumedCapacity:      aws.String(dynamodb.ReturnConsumedCapacityIndexes),
 		ReturnItemCollectionMetrics: aws.String(dynamodb.ReturnItemCollectionMetricsSize),
@@ -453,8 +453,8 @@ func (d *DynamoDBAppContext) GetActivationToken(id persistence.AccountID) string
 	res, err := d.db.svc.GetItem(&dynamodb.GetItemInput{
 		TableName: d.db.table,
 		Key: map[string]*dynamodb.AttributeValue{
-			"appID": &dynamodb.AttributeValue{S: aws.String(d.appID.ID)},
-			"subID": &dynamodb.AttributeValue{S: aws.String("account:" + id.UUID.String())},
+			"appID": {S: aws.String(d.appID.ID)},
+			"subID": {S: aws.String("account:" + id.UUID.String())},
 		},
 		ProjectionExpression:   aws.String("activationToken"),
 		ReturnConsumedCapacity: aws.String(dynamodb.ReturnConsumedCapacityIndexes),
@@ -479,10 +479,10 @@ func (d *DynamoDBAppContext) DeleteActivationToken(id persistence.AccountID) err
 	out, err := d.db.svc.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: d.db.table,
 		Key: map[string]*dynamodb.AttributeValue{
-			"appID": &dynamodb.AttributeValue{
+			"appID": {
 				S: aws.String(d.appID.ID),
 			},
-			"subID": &dynamodb.AttributeValue{
+			"subID": {
 				S: aws.String("account:" + id.UUID.String()),
 			},
 		},
@@ -506,10 +506,10 @@ func (d *DynamoDBAppContext) UpdateAppName(newName string) error {
 	out, err := d.db.svc.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: d.db.table,
 		Key: map[string]*dynamodb.AttributeValue{
-			"appID": &dynamodb.AttributeValue{
+			"appID": {
 				S: aws.String(d.appID.ID),
 			},
-			"subID": &dynamodb.AttributeValue{S: aws.String("details")},
+			"subID": {S: aws.String("details")},
 		},
 		ConditionExpression: aws.String("attribute_exists(#appID)"),
 		UpdateExpression:    aws.String("SET #name = :n"),
@@ -540,10 +540,10 @@ func (d *DynamoDBAppContext) UpdateAppOrigin(newOrigin string) error {
 	out, err := d.db.svc.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: d.db.table,
 		Key: map[string]*dynamodb.AttributeValue{
-			"appID": &dynamodb.AttributeValue{
+			"appID": {
 				S: aws.String(d.appID.ID),
 			},
-			"subID": &dynamodb.AttributeValue{S: aws.String("details")},
+			"subID": {S: aws.String("details")},
 		},
 		ConditionExpression: aws.String("attribute_exists(#appID)"),
 		UpdateExpression:    aws.String("SET #allowedOrigin = :o"),

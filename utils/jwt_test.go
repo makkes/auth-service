@@ -64,7 +64,7 @@ func TestJWTCreationAndParsing(t *testing.T) {
 	appID := randomAppID()
 	accID := randomAccountID()
 	now := time.Now()
-	jwt, err := CreateJWT(privKey, accID, appID, now)
+	jwt, _ := CreateJWT(privKey, accID, appID, now)
 
 	claims, err := ParseJWT(jwt, privKey.Public())
 
@@ -81,7 +81,7 @@ func TestJWTParsingAnExpiredToken(t *testing.T) {
 	appID := randomAppID()
 	accID := randomAccountID()
 	now := time.Now().Add(-87600 * time.Hour).Add(-1 * time.Second)
-	jwtString, err := CreateJWT(privKey, accID, appID, now)
+	jwtString, _ := CreateJWT(privKey, accID, appID, now)
 
 	claims, err := ParseJWT(jwtString, privKey.Public())
 

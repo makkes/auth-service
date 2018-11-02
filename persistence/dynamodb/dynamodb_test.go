@@ -154,7 +154,7 @@ func TestGetAccountReturnsAccount(t *testing.T) {
 	assert.Equal(len(account.PasswordHash.Hash), 32, "passwordHash doesn't have expected size")
 }
 
-func TestGetAccountByEmailForNonExistantApp(t *testing.T) {
+func TestGetAccountByEmailForNonexistentApp(t *testing.T) {
 	assert := assert.NewStrict(t)
 	db, _ := NewDynamoDB(testTableName)
 
@@ -205,7 +205,7 @@ func TestSaveActivationTokenError(t *testing.T) {
 	db, _ := NewDynamoDB(testTableName)
 	err := db.App(persistence.AppID{ID: "c04aac4e-6185-43db-9054-13b0774dae9e"}).SaveActivationToken(randomAccountID(), "token")
 
-	assert.NotNil(err, "We expected an error to occur when saving an activation token with a non-existant account ID")
+	assert.NotNil(err, "We expected an error to occur when saving an activation token with a non-existent account ID")
 }
 
 func TestSaveActivationTokenSuccess(t *testing.T) {
@@ -223,7 +223,7 @@ func TestActivationTokenEmpty(t *testing.T) {
 
 	token := db.App(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"}).GetActivationToken(randomAccountID())
 
-	assert.Equal(token, "", "We expected to get no activation token for a non-existant account")
+	assert.Equal(token, "", "We expected to get no activation token for a non-existent account")
 }
 
 func TestActivationToken(t *testing.T) {
@@ -250,7 +250,7 @@ func TestSaveAppHappyPath(t *testing.T) {
 
 	adminID, _ := uuid.FromString("492c0de9-b072-49a3-8b75-127dc19c358c")
 	privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
-	res, err := db.SaveApp(persistence.AppID{"anewappid"}, "a new app", 99, "https://anewapp.io", persistence.MailTemplates{ActivateAccount: "welcome, man"}, []persistence.AccountID{persistence.AccountID{adminID}}, *privKey)
+	res, err := db.SaveApp(persistence.AppID{"anewappid"}, "a new app", 99, "https://anewapp.io", persistence.MailTemplates{ActivateAccount: "welcome, man"}, []persistence.AccountID{{adminID}}, *privKey)
 	assert.Nil(err, "We didn't expect an error")
 	assert.NotNil(res, "We expected a non-nil app")
 

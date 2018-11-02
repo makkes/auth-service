@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/makkes/handlers"
 	log "github.com/makkes/golib/logging"
+	"github.com/makkes/handlers"
 	"github.com/makkes/mux"
 	"github.com/makkes/services.makk.es/auth/business"
 	"github.com/makkes/services.makk.es/auth/mailer"

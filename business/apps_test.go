@@ -193,8 +193,8 @@ func TestGetAppsReturnsAllAppsInAdminAppForAdminUser(t *testing.T) {
 	assert := assert.NewAssert(t)
 
 	expected := []*persistence.App{
-		&persistence.App{},
-		&persistence.App{},
+		{},
+		{},
 	}
 	mockDB, _, _, _, ctxApp := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	mockDB.On("GetApps").Return(expected, nil)
@@ -218,10 +218,10 @@ func TestGetAppsReturnsOnlyThoseAppsTheUserIsAdminOf(t *testing.T) {
 	uid, _ := uuid.NewV4()
 	authAccountID := persistence.AccountID{uid}
 	expected := []*persistence.App{
-		&persistence.App{
+		{
 			Admins: []persistence.AccountID{authAccountID},
 		},
-		&persistence.App{},
+		{},
 	}
 	mockDB, _, _, _, ctxApp := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	mockDB.On("GetApps").Return(expected, nil)
