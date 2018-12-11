@@ -6,13 +6,11 @@ COPY . .
 WORKDIR cmd
 RUN go get -v
 ARG VERSION
-RUN go build -o auth -ldflags "-X 'github.com/makkes/services.makk.es/auth/server.version=${VERSION}'" 
+RUN CGO_ENABLED=0 go build -a -o auth -ldflags "-X 'github.com/makkes/services.makk.es/auth/server.version=${VERSION}'" 
 
-FROM alpine:latest
+FROM scratch
 
-RUN apk update && apk add ca-certificates
+COPY --from=builder /go/src/github.com/makkes/services.makk.es/auth/cmd/auth /
+COPY ca-certificates.crt /etc/ssl/certs/
 
-WORKDIR /root
-COPY --from=builder /go/src/github.com/makkes/services.makk.es/auth/cmd/auth .
-
-CMD ["./auth"]
+CMD ["/auth"]
