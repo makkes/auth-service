@@ -4,7 +4,7 @@ import (
 	"crypto/rsa"
 
 	"github.com/makkes/services.makk.es/auth/persistence"
-	uuid "github.com/satori/go.uuid"
+	uuid "github.com/gofrs/uuid"
 	"github.com/stretchr/testify/mock"
 )
 

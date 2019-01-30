@@ -9,7 +9,7 @@ import (
 
 	log "github.com/makkes/golib/logging"
 	"github.com/makkes/services.makk.es/auth/persistence"
-	uuid "github.com/satori/go.uuid"
+	uuid "github.com/gofrs/uuid"
 )
 
 func createApp(db persistence.DB, app map[string]interface{}) []persistence.AccountID {

@@ -9,7 +9,7 @@ import (
 
 	log "github.com/makkes/golib/logging"
 	"github.com/makkes/services.makk.es/auth/persistence"
-	"github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 type AppName struct {

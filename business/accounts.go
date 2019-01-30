@@ -10,7 +10,7 @@ import (
 	"github.com/makkes/services.makk.es/auth/mailer"
 	"github.com/makkes/services.makk.es/auth/persistence"
 	"github.com/makkes/services.makk.es/auth/utils"
-	uuid "github.com/satori/go.uuid"
+	uuid "github.com/gofrs/uuid"
 )
 
 var ActivationError = errors.New("Account could not be activated")
