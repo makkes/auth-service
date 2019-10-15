@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	log "github.com/makkes/golib/logging"
-	"github.com/makkes/mux"
 	"github.com/makkes/services.makk.es/auth/business"
 	"github.com/makkes/services.makk.es/auth/persistence"
 	"github.com/makkes/services.makk.es/auth/server/middleware"
@@ -260,6 +260,7 @@ func (h *Handlers) GetAccountHandler(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	accountID, err := persistence.NewAccountID(id)
 	if err != nil {
+		log.Error("could not create account id '%s': %s", id, err)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}

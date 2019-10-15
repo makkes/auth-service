@@ -74,7 +74,7 @@ func AllowedOrigins(db persistence.DB) func(*http.Request) ([]string, *http.Requ
 				return []string{""}, r
 			}
 		}
-		log.Info("Returning origin for %s", app.ID)
+		log.Info("Returning origin %s for %s", app.AllowedOrigin, app.ID)
 		return []string{app.AllowedOrigin}, r.WithContext(context.WithValue(r.Context(), AppIDContextKey, app))
 	}
 }

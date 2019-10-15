@@ -1,0 +1,25 @@
+{
+  "admin": {
+    "id": "0a791409-d58d-4175-ba02-2bdbdb8e6629",
+    "name": "admin",
+    "maxAccounts": 2147483647,
+    "allowedOrigin": "http://localhost:4243",
+    "mailTemplates": {
+      "activateAccount": "From: noreply@services.makk.es\nTo: {{.To}}\nSubject: Activate your Makk.es Services account\n\nWelcome to Makk.es Services,\n\nto activate your account, please click on the following link:\n\nhttps://services.makk.es/admin/#/account/activate?id={{.ID}}&token={{.Token}}\n\nEnjoy!"
+    },
+    "privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAuNtywcMDA0ux8aM0UHcFk7+Iqaxf3F6+FAEMvmBbB4Hycd7q\nmRckB8FlQQ3QwJp+3pQkC4cKUy86Rj/bVltVVmJ1gKE0Gvum7/2GlelnvWLs065I\ncUYUcgXys8ZrVW8xQG6g1hs/RQ5BD4lJIjOjirukPzuaoPAbMVZbEQ0xLucAuAh4\ntm7s1kFj3GLt4Df/CED4C632lbanO9fhxVbIY2Aocohoe1pkPQdRkkJSGWzEWVK/\nl4VL/UMnTrU1llwZaU7r9RA8y4AgSK2xOHq1zKIaXY+j0MjdHWiZGvh6ZzQH7y//\nz+qA+MKvK0XM0mMxtCWpXkaQqPpOF+S6DML3iQIDAQABAoIBAF2EFr/S6blHF9QI\nHjT+oUGnSXmcjDota7cu+MVudV6M7JuSi9e6jy2lNpX8aTimb7wl8T4rqJuAbtiP\nAWTke31h/dN+uZ9U45TRCr7X/vUeEHTd3CQBseIlBCzSGgZ0Y9QWoyLtUcqbdWpo\npyi4Oum6F1Mt0gHMtdT1vMgZhmIU+gDL4ud3oIsaiLRl20Is3lS0sMZt82OA69kK\ngK1/E0qjL2ojKIGObf9/gGMBOgEpFjsiwuB1ztTqPckOi/5CwuhP3wSKOSP6rQOd\nmIBk4cDp7le0Lc2wCfB9qvucPzuffy45WKfLYDvNptEc8Dv4MV6gHzFNkR5/eESx\nGVBnZCECgYEA6GhuWZhqOUqEQXKT4ORT7iSIP+IeVKFI13pZKqnzN8/kZI3Pz5EG\nZ63Mu36bOoIiq5CBaUCXTbWWvgsk4oFVxxdmsiF63GKlLNzbVzNFFJceWkqopDA2\nt7YD0ZT4qt56d+HBXz9Hod6xLXk7t+SvfMp6PtXycXpO3cN+v7whcx0CgYEAy59R\n8WE87fYeLiSSt51FJxmYNzgqJGA4IurJfisYsMrnrlsGsCLfmHFJ4DMc/geZO1wb\nL51EgsqfXy9clQSSbXneKYPzCpc/ang7tBWhWBZuHsoBx9kMJjvU7l5NEN/xFv8M\n8WKhiw0snrERf91n/o31APvGdYoee91KbWKd3l0CgYEAytqULwnU9cqv47xRjQNe\nqsciUbhZRv876DB3ccDDdRy1Ont5PrBUCdzujVz1urzp7BwGiMsDBaYRPDHX8Qh4\nyX0Ie0Szy3ciuyTPIq6yhkVdDeyKhD09FV7+uEkyP1pPRSI8uZkvOf95YLqnwFwQ\nPHky+HOf2SKrge9oS4y3GZUCgYAPy8AzlXOAkkMtGTE4hT7EFbw1LGo4gC5apxQS\ncY1syZDHedA/AbWOwdsVRWHOYxCEBlUlkHGsI8PRQn9QIBar33RYjB/ihnEo9ULM\naZEmoDbStKEGu9Oxc5rFExOvZ2/wdMCwSRJ3EwKPHPVakfZrTN/gv6dZnulWeog3\njBrrEQKBgQCuQSuec1pO7FlDtz8h7kiHHfQu+0kaqPZD6v3Hu5pVwNPb00bothb3\nxYSWO9ZwE1vC5pTdPkjYbJtPYYtr07idM93oiE+t0Jd9GvcKebW2nFwph6ZgKipT\nt5NaVIq2h4K2KcHSX/ilD9jyAJf8oYOWJe8QPQiwGYRMFRYvMV9eGw==\n-----END RSA PRIVATE KEY-----",
+    "users": [
+      {
+        "id": "b5ff6934-1fd5-4834-821f-62d26428c0b6",
+        "email": "admin@makk.es",
+        "password": "admin",
+        "roles": [
+          "admin"
+        ]
+      }
+    ],
+    "admins": [
+      "b5ff6934-1fd5-4834-821f-62d26428c0b6"
+    ]
+  }
+}

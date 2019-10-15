@@ -5,15 +5,19 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"database/sql/driver"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"strings"
 
+	"golang.org/x/xerrors"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	log "github.com/makkes/golib/logging"
 	"github.com/gofrs/uuid"
+	log "github.com/makkes/golib/logging"
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -50,6 +54,30 @@ type Hash struct {
 	Salt []byte
 }
 
+// Scan makes Hash implement the sql.Scanner interface
+func (h *Hash) Scan(src interface{}) error {
+	encodedHash, ok := src.(string)
+	if !ok {
+		return xerrors.Errorf("%#v is not a string", src)
+	}
+	err := json.Unmarshal([]byte(encodedHash), h)
+	if err != nil {
+		return xerrors.Errorf("could not unmarshal password hash %s: %w", encodedHash, err)
+	}
+
+	return nil
+}
+
+// Value makes Hash implement the sql.driver.Scanner interface
+func (r Hash) Value() (driver.Value, error) {
+	encodedHash, err := json.Marshal(r)
+	if err != nil {
+		return nil, xerrors.Errorf("could not marshal password hash: %w", err)
+	}
+
+	return driver.Value(encodedHash), nil
+}
+
 func NewHash(in string) (Hash, error) {
 	salt := make([]byte, 16)
 	_, err := rand.Read(salt)
@@ -78,10 +106,36 @@ func (h Hash) Matches(password string) bool {
 	return true
 }
 
+type Roles []string
+
+// Scan makes Roles implement the sql.Scanner interface
+func (r *Roles) Scan(src interface{}) error {
+	encodedRoles, ok := src.(string)
+	if !ok {
+		return xerrors.Errorf("%#v is not a string", src)
+	}
+	err := json.Unmarshal([]byte(encodedRoles), r)
+	if err != nil {
+		return xerrors.Errorf("could not unmarshal roles %s: %w", encodedRoles, err)
+	}
+
+	return nil
+}
+
+// Value makes Roles implement the sql.driver.Scanner interface
+func (r Roles) Value() (driver.Value, error) {
+	encodedRoles, err := json.Marshal(r)
+	if err != nil {
+		return nil, xerrors.Errorf("could not marshal roles: %w", err)
+	}
+
+	return driver.Value(encodedRoles), nil
+}
+
 type Account struct {
 	ID           AccountID `json:"id" dynamodbav:"subID"`
 	Email        string    `json:"email"`
-	Roles        []string  `json:"roles"`
+	Roles        Roles     `json:"roles"`
 	PasswordHash Hash      `json:"-" dynamodbav:"passwordHash"`
 	Active       bool
 }
@@ -111,8 +165,56 @@ type MailTemplates struct {
 	ActivateAccount string `json:"activateAccount"`
 }
 
+// Scan makes MailTemplates implement the sql.Scanner interface
+func (m *MailTemplates) Scan(src interface{}) error {
+	encodedMailTemplates, ok := src.(string)
+	if !ok {
+		return xerrors.Errorf("%#v is not a string", src)
+	}
+	err := json.Unmarshal([]byte(encodedMailTemplates), m)
+	if err != nil {
+		return xerrors.Errorf("could not unmarshal mail templates %s: %w", encodedMailTemplates, err)
+	}
+
+	return nil
+}
+
+// Value makes MailTemplates implement the sql.driver.Scanner interface
+func (m MailTemplates) Value() (driver.Value, error) {
+	encodedMailTemplates, err := json.Marshal(m)
+	if err != nil {
+		return nil, xerrors.Errorf("could not marshal mail templates: %w", err)
+	}
+
+	return driver.Value(encodedMailTemplates), nil
+}
+
 type AppKey struct {
 	Key rsa.PrivateKey
+}
+
+// Scan makes AppKey implement the sql.Scanner interface
+func (k *AppKey) Scan(src interface{}) error {
+	encodedPrivateKey, ok := src.(string)
+	if !ok {
+		return xerrors.Errorf("%#v is not a string", src)
+	}
+	decodedPrivateKey, err := base64.StdEncoding.DecodeString(encodedPrivateKey)
+	if err != nil {
+		return xerrors.Errorf("could not decode private key '%#v': %s", encodedPrivateKey, err)
+	}
+	privateKey, err := x509.ParsePKCS1PrivateKey(decodedPrivateKey)
+	if err != nil {
+		return xerrors.Errorf("could not parse private key '%#v': %s", decodedPrivateKey, err)
+	}
+	k.Key = *privateKey
+
+	return nil
+}
+
+// Value makes AppKey implement the sql.driver.Scanner interface
+func (k AppKey) Value() (driver.Value, error) {
+	return driver.Value(base64.StdEncoding.EncodeToString(x509.MarshalPKCS1PrivateKey(&k.Key))), nil
 }
 
 func (key AppKey) EncodePublicKey() string {
@@ -145,13 +247,39 @@ func (key *AppKey) UnmarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) 
 	return nil
 }
 
+type AppAdmins []AccountID
+
+// Scan makes AppAdmins implement the sql.Scanner interface
+func (a *AppAdmins) Scan(src interface{}) error {
+	encodedAppAdmins, ok := src.(string)
+	if !ok {
+		return xerrors.Errorf("%#v is not a string", src)
+	}
+	err := json.Unmarshal([]byte(encodedAppAdmins), a)
+	if err != nil {
+		return xerrors.Errorf("could not unmarshal roles %s: %w", encodedAppAdmins, err)
+	}
+
+	return nil
+}
+
+// Value makes AppAdmins implement the sql.driver.Scanner interface
+func (a AppAdmins) Value() (driver.Value, error) {
+	encodedAppAdmins, err := json.Marshal(a)
+	if err != nil {
+		return nil, xerrors.Errorf("could not marshal app admins: %w", err)
+	}
+
+	return driver.Value(encodedAppAdmins), nil
+}
+
 type App struct {
 	ID            AppID         `json:"id" dynamodbav:"appID"`
 	Name          string        `json:"name"`
 	MaxAccounts   int           `json:"maxAccounts"`
 	AllowedOrigin string        `json:"allowedOrigin"`
 	MailTemplates MailTemplates `json:"mailTemplates"`
-	Admins        []AccountID   `json:"admins"`
+	Admins        AppAdmins     `json:"admins"`
 	PrivateKey    AppKey        `json:"-" dynamodbav:"privateKey"`
 	PublicKey     string        `json:"publicKey" dynamodbav:"-"`
 }
@@ -191,7 +319,7 @@ func NewAccountID(id string) (AccountID, error) {
 type DB interface {
 	GetApp(appID AppID) *App
 	App(appID AppID) AppContext
-	SaveApp(id AppID, name string, maxAccounts int, allowedOrigin string, mailTemplates MailTemplates, admins []AccountID, privateKey rsa.PrivateKey) (*App, error)
+	SaveApp(id AppID, name string, maxAccounts int, allowedOrigin string, mailTemplates MailTemplates, admins AppAdmins, privateKey rsa.PrivateKey) (*App, error)
 	DeleteApp(id AppID) error
 	GetApps() []*App
 }
@@ -201,7 +329,7 @@ type AppContext interface {
 	GetAccountByEmail(email string) *Account
 	GetActivationToken(id AccountID) string
 	DeleteActivationToken(id AccountID) error
-	SaveAccount(account Account)
+	SaveAccount(account Account) error
 	GetAccount(id AccountID) *Account
 	GetAccounts() []*Account
 	UpdateAppName(newName string) error

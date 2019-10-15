@@ -73,7 +73,7 @@ func (m *SMTPMailer) SendActivationMail(to string, token string, id persistence.
 		return err
 	}
 	bodyWriter.Flush()
-	log.Info("Sending activation mail to %s:\n%s", to, bodyBuffer.Bytes())
+	log.Debug("Sending activation mail to %s:\n%s", to, bodyBuffer.Bytes())
 	err = smtp.SendMail(
 		m.host+":"+m.port,
 		smtp.PlainAuth(

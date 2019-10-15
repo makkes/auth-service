@@ -1,0 +1,45 @@
+{
+    "admin": {
+        "id": "0a791409-d58d-4175-ba02-2bdbdb8e6629",
+        "name": "admin",
+        "maxAccounts": 2147483647,
+        "allowedOrigin": "http://localhost:4243",
+        "mailTemplates": {
+            "activateAccount": "From: noreply@services.makk.es\nTo: {{.To}}\nSubject: Activate your Makk.es Services account\n\nWelcome to Makk.es Services,\n\nto activate your account, please click on the following link:\n\nhttps://services.makk.es/admin/#/account/activate?id={{.ID}}&token={{.Token}}\n\nEnjoy!"
+        },
+        "privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAuNtywcMDA0ux8aM0UHcFk7+Iqaxf3F6+FAEMvmBbB4Hycd7q\nmRckB8FlQQ3QwJp+3pQkC4cKUy86Rj/bVltVVmJ1gKE0Gvum7/2GlelnvWLs065I\ncUYUcgXys8ZrVW8xQG6g1hs/RQ5BD4lJIjOjirukPzuaoPAbMVZbEQ0xLucAuAh4\ntm7s1kFj3GLt4Df/CED4C632lbanO9fhxVbIY2Aocohoe1pkPQdRkkJSGWzEWVK/\nl4VL/UMnTrU1llwZaU7r9RA8y4AgSK2xOHq1zKIaXY+j0MjdHWiZGvh6ZzQH7y//\nz+qA+MKvK0XM0mMxtCWpXkaQqPpOF+S6DML3iQIDAQABAoIBAF2EFr/S6blHF9QI\nHjT+oUGnSXmcjDota7cu+MVudV6M7JuSi9e6jy2lNpX8aTimb7wl8T4rqJuAbtiP\nAWTke31h/dN+uZ9U45TRCr7X/vUeEHTd3CQBseIlBCzSGgZ0Y9QWoyLtUcqbdWpo\npyi4Oum6F1Mt0gHMtdT1vMgZhmIU+gDL4ud3oIsaiLRl20Is3lS0sMZt82OA69kK\ngK1/E0qjL2ojKIGObf9/gGMBOgEpFjsiwuB1ztTqPckOi/5CwuhP3wSKOSP6rQOd\nmIBk4cDp7le0Lc2wCfB9qvucPzuffy45WKfLYDvNptEc8Dv4MV6gHzFNkR5/eESx\nGVBnZCECgYEA6GhuWZhqOUqEQXKT4ORT7iSIP+IeVKFI13pZKqnzN8/kZI3Pz5EG\nZ63Mu36bOoIiq5CBaUCXTbWWvgsk4oFVxxdmsiF63GKlLNzbVzNFFJceWkqopDA2\nt7YD0ZT4qt56d+HBXz9Hod6xLXk7t+SvfMp6PtXycXpO3cN+v7whcx0CgYEAy59R\n8WE87fYeLiSSt51FJxmYNzgqJGA4IurJfisYsMrnrlsGsCLfmHFJ4DMc/geZO1wb\nL51EgsqfXy9clQSSbXneKYPzCpc/ang7tBWhWBZuHsoBx9kMJjvU7l5NEN/xFv8M\n8WKhiw0snrERf91n/o31APvGdYoee91KbWKd3l0CgYEAytqULwnU9cqv47xRjQNe\nqsciUbhZRv876DB3ccDDdRy1Ont5PrBUCdzujVz1urzp7BwGiMsDBaYRPDHX8Qh4\nyX0Ie0Szy3ciuyTPIq6yhkVdDeyKhD09FV7+uEkyP1pPRSI8uZkvOf95YLqnwFwQ\nPHky+HOf2SKrge9oS4y3GZUCgYAPy8AzlXOAkkMtGTE4hT7EFbw1LGo4gC5apxQS\ncY1syZDHedA/AbWOwdsVRWHOYxCEBlUlkHGsI8PRQn9QIBar33RYjB/ihnEo9ULM\naZEmoDbStKEGu9Oxc5rFExOvZ2/wdMCwSRJ3EwKPHPVakfZrTN/gv6dZnulWeog3\njBrrEQKBgQCuQSuec1pO7FlDtz8h7kiHHfQu+0kaqPZD6v3Hu5pVwNPb00bothb3\nxYSWO9ZwE1vC5pTdPkjYbJtPYYtr07idM93oiE+t0Jd9GvcKebW2nFwph6ZgKipT\nt5NaVIq2h4K2KcHSX/ilD9jyAJf8oYOWJe8QPQiwGYRMFRYvMV9eGw==\n-----END RSA PRIVATE KEY-----",
+        "users": [
+            {"id": "b5ff6934-1fd5-4834-821f-62d26428c0b6", "email": "admin@makk.es", "password": "admin", "roles": ["admin"]},
+            {"id": "b1ee9d2c-d252-4c45-a524-48e3d6da24c1", "email": "mail@makk.es", "password": "test", "roles": []},
+            {"id": "ff046952-9fa3-4ec9-89ba-b602a8f22e4f", "email": "inactive@makk.es", "password": "test", "roles": [], "activationToken": "token"}
+        ]
+    },
+    "others": [{
+        "id": "c04aac4e-6185-43db-9054-13b0774dae9e",
+        "name": "another_app",
+        "maxAccounts": 5,
+        "allowedOrigin": "http://another.app.com",
+        "admins": [
+            "b1ee9d2c-d252-4c45-a524-48e3d6da24c1"
+        ],
+        "privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA6Twat8a5+CyKBPxcRlXYAPIdTal8y7fZS8ubmhj0H/AcEv6e\nhg4E0dIvvxWCrnuBfev02uPoLkrK2kEqkX0y6yIgHR3XeWhOR0ZqQl+cJwOuToGN\nNM/BbbtiaUj0osjmLNKqAkT+0MPoVWelZfzowtoDu99rjM+8unzA48LTgoEHcqvT\n6V7KS22MoVmylGSPQdD3/6CQJt9s+fyY8n2gJ5RtFb05rOx3WRBsYYsWzVGqWXG/\nuZLO4UCst2w9cV3pQPAgVnaWmbtpuXRKgDAzxNiAx62Dx40ns2FRgd593yxRNQ6r\nnd85o9WUFASbCNN10I+Lnl7bjcLMGkFmC8VBqQIDAQABAoIBAQChi7jxy5qp06ex\ndl4vdWwMk6ZKUXeX3vqKLjfTjy8gI/4+BdAlB/a8ofniP3LpibASWOma5zq9PZ6t\nd2+VoAMxq8xUfoPtmpqFcbdNy81rlHgZ9k+o4bGXYK/0Psz7J22OZEfPFJzuWpNE\n/GoqbveFZt4pNcHXoVeWT6yG1T4M6CGNkwh82vz1FgHKuKF32CyaqvyNKXuAxvQr\nUroJu6UbPd5QkJeVEPljLNhYzAUs+URB2kdnCYqcv5aAdJ9i21fcgiqKzEdhPGKG\nWBrknHkdkml+ZBN/IR2T+Zh+/M4S4R2HR7cSakoFCJJutsric000aEAYI0Cvn2nf\neuAj96SRAoGBAPbejl+1RzXvxBmiJNJiLPcGNdc30JzSg7tgAR0NAIb0WRvlEtEw\ndvxLuYOWA0dH7pJdvF/YFkjbVC98QAY634z/tQ/afBm4ee1+TS70i3PyZ8Y7onYn\nk1ScpOgS0Lv67ps79hLu5Ox9vtlVOFloPqEmlXP4Wa6D8/fXWKCXpPsdAoGBAPHc\nc4xaYH1jLJJJgaFRMpzBuATHZRB6tfTY0dyF+7QayiebS3bLvN7JyV/FVJpW3PzL\nO5iv5Et4hpRdXAeG7AZRoXC/WE1aDuHWFkFJm2OYyIsIwrESWZIAUrYM9MpV/F4i\nKw2O/7xK/E+P+fH/+BiMxyhyYbqfQIhej9M5+479AoGBANsEYi25J19Lw5+2QZLA\n9QGHafbxlsu63JI9P1+lrGUOnYvo9IPQyo9VI1YBnhD8WUVTkg86J7Mlmw+x3R9p\n1fFC30EcZmNvTgUMu68/2ATa94RgXecTf1teydL29mb/3fatAMiVV1YUzWAFgkOX\n/5B7KbbEi9QPTz//tqprPzxlAoGAPWuRgGwXIuCDmibGn7PiGYLse3IzjSrMeIBz\nUwBHemZvPf2m/WUh8qXl2MdhA8zZU+08ljrcy/mwm47V5ydxWu1yBRLilsovC1T1\n0+CgcHuFOiGgZ51UV8pzNr41kAikDTe6HThaY3PbfUz/2V/6nilqDjB19xGoLrls\n5uRLqPUCgYB8aFN48r/Czk33U2++a0qcYzUo60lSSYrqah+2JZVzoXRonhoTkbrK\n2FXooJQlJPjb/uoDhM76AXb7lmYJzhXcLmFpesjTg0a/WS1Ukf7brmo8XRIbOirV\n9OdqKZMp99gsCNZ74fNWuip7HXckB3veTETx+asRgF7Pnm7n5ASTwQ==\n-----END RSA PRIVATE KEY-----",
+        "users": [
+            {"id": "66efbaf2-3417-4df4-a477-239af136e0d3", "email": "mail@makk.es", "password": "makkes", "roles": []},
+            {"id": "b1ee9d2c-d252-4c45-a524-48e3d6da24c1", "email": "mail@makk.es", "password": "test", "roles": []},
+            {"id": "e8fc7d47-aba3-40db-afdb-5caddd6fd9dd", "email": "admin@example.org", "password": "admin", "roles": ["admin"]}
+        ]
+    },{
+        "id": "c7d1a9d5-c211-4fd6-a275-393c8750cd9e",
+        "name": "app to be deleted",
+        "maxAccounts": 99,
+        "allowedOrigin": "http://thisappwillbedelet.ed",
+        "admins": [
+            "b1ee9d2c-d252-4c45-a524-48e3d6da24c1"
+        ],
+        "privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA6Twat8a5+CyKBPxcRlXYAPIdTal8y7fZS8ubmhj0H/AcEv6e\nhg4E0dIvvxWCrnuBfev02uPoLkrK2kEqkX0y6yIgHR3XeWhOR0ZqQl+cJwOuToGN\nNM/BbbtiaUj0osjmLNKqAkT+0MPoVWelZfzowtoDu99rjM+8unzA48LTgoEHcqvT\n6V7KS22MoVmylGSPQdD3/6CQJt9s+fyY8n2gJ5RtFb05rOx3WRBsYYsWzVGqWXG/\nuZLO4UCst2w9cV3pQPAgVnaWmbtpuXRKgDAzxNiAx62Dx40ns2FRgd593yxRNQ6r\nnd85o9WUFASbCNN10I+Lnl7bjcLMGkFmC8VBqQIDAQABAoIBAQChi7jxy5qp06ex\ndl4vdWwMk6ZKUXeX3vqKLjfTjy8gI/4+BdAlB/a8ofniP3LpibASWOma5zq9PZ6t\nd2+VoAMxq8xUfoPtmpqFcbdNy81rlHgZ9k+o4bGXYK/0Psz7J22OZEfPFJzuWpNE\n/GoqbveFZt4pNcHXoVeWT6yG1T4M6CGNkwh82vz1FgHKuKF32CyaqvyNKXuAxvQr\nUroJu6UbPd5QkJeVEPljLNhYzAUs+URB2kdnCYqcv5aAdJ9i21fcgiqKzEdhPGKG\nWBrknHkdkml+ZBN/IR2T+Zh+/M4S4R2HR7cSakoFCJJutsric000aEAYI0Cvn2nf\neuAj96SRAoGBAPbejl+1RzXvxBmiJNJiLPcGNdc30JzSg7tgAR0NAIb0WRvlEtEw\ndvxLuYOWA0dH7pJdvF/YFkjbVC98QAY634z/tQ/afBm4ee1+TS70i3PyZ8Y7onYn\nk1ScpOgS0Lv67ps79hLu5Ox9vtlVOFloPqEmlXP4Wa6D8/fXWKCXpPsdAoGBAPHc\nc4xaYH1jLJJJgaFRMpzBuATHZRB6tfTY0dyF+7QayiebS3bLvN7JyV/FVJpW3PzL\nO5iv5Et4hpRdXAeG7AZRoXC/WE1aDuHWFkFJm2OYyIsIwrESWZIAUrYM9MpV/F4i\nKw2O/7xK/E+P+fH/+BiMxyhyYbqfQIhej9M5+479AoGBANsEYi25J19Lw5+2QZLA\n9QGHafbxlsu63JI9P1+lrGUOnYvo9IPQyo9VI1YBnhD8WUVTkg86J7Mlmw+x3R9p\n1fFC30EcZmNvTgUMu68/2ATa94RgXecTf1teydL29mb/3fatAMiVV1YUzWAFgkOX\n/5B7KbbEi9QPTz//tqprPzxlAoGAPWuRgGwXIuCDmibGn7PiGYLse3IzjSrMeIBz\nUwBHemZvPf2m/WUh8qXl2MdhA8zZU+08ljrcy/mwm47V5ydxWu1yBRLilsovC1T1\n0+CgcHuFOiGgZ51UV8pzNr41kAikDTe6HThaY3PbfUz/2V/6nilqDjB19xGoLrls\n5uRLqPUCgYB8aFN48r/Czk33U2++a0qcYzUo60lSSYrqah+2JZVzoXRonhoTkbrK\n2FXooJQlJPjb/uoDhM76AXb7lmYJzhXcLmFpesjTg0a/WS1Ukf7brmo8XRIbOirV\n9OdqKZMp99gsCNZ74fNWuip7HXckB3veTETx+asRgF7Pnm7n5ASTwQ==\n-----END RSA PRIVATE KEY-----",
+        "users": [
+            {"id": "66efbaf2-3417-4df4-a477-239af136e0d3", "email": "mail@makk.es", "password": "makkes", "roles": []},
+            {"id": "e8fc7d47-aba3-40db-afdb-5caddd6fd9dd", "email": "admin@example.org", "password": "admin", "roles": ["admin"]}
+        ]
+    }]
+}
