@@ -3,6 +3,7 @@ FROM golang:1.13.1 as builder
 WORKDIR /auth
 COPY . .
 ARG VERSION
+ENV CGO_ENABLED 0
 RUN make VERSION=$VERSION build
 
 FROM scratch
