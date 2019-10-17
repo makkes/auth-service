@@ -72,8 +72,9 @@ func stopDatabase() {
 func TestMain(m *testing.M) {
 	log.SetLevel(log.WARN)
 
-	startDatabase()
-	time.Sleep(2 * time.Second)
+	// startDatabase()
+	// time.Sleep(2 * time.Second)
+
 	var err error
 	db, err = postgres.NewPostgresDB("postgres", "", "postgres", "localhost", containerPort, "disable")
 	if err != nil {
@@ -84,11 +85,11 @@ func TestMain(m *testing.M) {
 	err = utils.PreloadApps(db, "test-apps.json")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error preloading data: %s\n", err)
-		stopDatabase()
+		// stopDatabase()
 		os.Exit(1)
 	}
 	code := m.Run()
-	stopDatabase()
+	// stopDatabase()
 	os.Exit(code)
 }
 
