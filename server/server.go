@@ -56,11 +56,12 @@ func NewServer(baseURL string) *Server {
 		},
 		"postgres": func() (persistence.DB, error) {
 			user := getEnvOrDefault("POSTGRES_USER", "auth")
+			password := getEnvOrDefault("POSTGRES_PASSWORD", "auth")
 			dbName := getEnvOrDefault("POSTGRES_DB_NAME", "auth")
 			host := getEnvOrDefault("POSTGRES_HOST", "localhost")
 			port := getEnvOrDefault("POSTGRES_PORT", "5432")
 			sslMode := getEnvOrDefault("POSTGRES_SSL_MODE", "disable")
-			return postgres.NewPostgresDB(user, dbName, host, port, sslMode)
+			return postgres.NewPostgresDB(user, password, dbName, host, port, sslMode)
 		},
 	}
 

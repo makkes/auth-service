@@ -44,9 +44,9 @@ type PostgresAppContext struct {
 	appID persistence.AppID
 }
 
-func NewPostgresDB(user, dbName, host, port, sslMode string) (*PostgresDB, error) {
+func NewPostgresDB(user, password, dbName, host, port, sslMode string) (*PostgresDB, error) {
 	logger := log.NewDefaultLevelLogger("POSTGRES")
-	connStr := fmt.Sprintf("user=%s dbname=%s host=%s port=%s sslmode=%s", user, dbName, host, port, sslMode)
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=%s", user, password, dbName, host, port, sslMode)
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
