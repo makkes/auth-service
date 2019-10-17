@@ -33,6 +33,10 @@ integration-postgres:
 clean:
 	rm -rf ./$(BUILD_DIR)
 
-.PHONY: image
-image:
-	docker build -t auth.services.makk.es:latest --build-arg VERSION="${VERSION}" .
+.PHONY: image-build
+image-build:
+	docker build -t makkes/auth.services.makk.es:latest --build-arg VERSION="${VERSION}" .
+
+.PHONY: image-push
+image-push:
+	docker push makkes/auth.services.makk.es:latest
