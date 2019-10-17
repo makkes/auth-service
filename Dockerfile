@@ -7,7 +7,7 @@ RUN make VERSION=$VERSION build
 
 FROM scratch
 
-COPY --from=builder /auth/cmd/auth /
+COPY --from=builder /auth/build/auth /
 COPY ca-certificates.crt /etc/ssl/certs/
 
 CMD ["/auth"]

@@ -1,6 +1,4 @@
 /README.html
-/cmd/cmd
-/cmd/auth
 /cmd/*.json
 .*.swp
 /build
