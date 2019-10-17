@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/makkes/services.makk.es/auth/persistence/postgres"
+
+	"github.com/gorilla/mux"
 	log "github.com/makkes/golib/logging"
 	"github.com/makkes/handlers"
-	"github.com/makkes/mux"
 	"github.com/makkes/services.makk.es/auth/business"
 	"github.com/makkes/services.makk.es/auth/mailer"
 	"github.com/makkes/services.makk.es/auth/persistence"
@@ -31,24 +33,40 @@ type Server struct {
 	version         string
 }
 
+func getEnvOrDefault(envName, defaultVal string) string {
+	res := os.Getenv(envName)
+	if res == "" {
+		return defaultVal
+	}
+	return res
+}
+
 func NewServer(baseURL string) *Server {
 	router := mux.NewRouter()
-	dynamodbTable := os.Getenv("DYNAMODB_TABLE")
-	if dynamodbTable == "" {
-		dynamodbTable = "auth"
-	}
 	dbTypes := map[string]func() (persistence.DB, error){
 		"dynamodb": func() (persistence.DB, error) {
+			dynamodbTable := os.Getenv("DYNAMODB_TABLE")
+			if dynamodbTable == "" {
+				dynamodbTable = "auth"
+			}
 			return dynamodb.NewDynamoDB(dynamodbTable)
 		},
 		"inmemory": func() (persistence.DB, error) {
 			return inmemorydb.NewInMemoryDB()
 		},
+		"postgres": func() (persistence.DB, error) {
+			user := getEnvOrDefault("POSTGRES_USER", "auth")
+			dbName := getEnvOrDefault("POSTGRES_DB_NAME", "auth")
+			host := getEnvOrDefault("POSTGRES_HOST", "localhost")
+			port := getEnvOrDefault("POSTGRES_PORT", "5432")
+			sslMode := getEnvOrDefault("POSTGRES_SSL_MODE", "disable")
+			return postgres.NewPostgresDB(user, dbName, host, port, sslMode)
+		},
 	}
 
 	dbType := os.Getenv("DB_TYPE")
 	if dbType == "" {
-		dbType = "dynamodb"
+		dbType = "postgres"
 	}
 	newDB := dbTypes[dbType]
 	if newDB == nil {
@@ -56,7 +74,7 @@ func NewServer(baseURL string) *Server {
 	}
 	db, err := newDB()
 	if err != nil {
-		panic(fmt.Sprintf("Could not create db: %s", err))
+		panic(fmt.Sprintf("Could not create db: %s", err.Error()))
 	}
 
 	mailHost := os.Getenv("MAIL_HOST")

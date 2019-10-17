@@ -1,11 +1,9 @@
-FROM golang:1.11.5-alpine as builder
+FROM golang:1.13.1 as builder
 
-WORKDIR /auth/
-RUN apk add --no-cache git
+WORKDIR /auth
 COPY . .
-WORKDIR cmd
 ARG VERSION
-RUN CGO_ENABLED=0 go build -a -o auth -ldflags "-X 'github.com/makkes/services.makk.es/auth/server.version=${VERSION}'" 
+RUN make VERSION=$VERSION build
 
 FROM scratch
 

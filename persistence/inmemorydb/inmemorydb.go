@@ -31,12 +31,13 @@ func (ctx *InMemoryAppContext) GetAccountByEmail(email string) *persistence.Acco
 	return nil
 }
 
-func (ctx *InMemoryAppContext) SaveAccount(account persistence.Account) {
+func (ctx *InMemoryAppContext) SaveAccount(account persistence.Account) error {
 	if ctx.db.accounts[ctx.appID] == nil {
 		ctx.db.accounts[ctx.appID] = make(map[persistence.AccountID]*persistence.Account)
 	}
 	ctx.db.accounts[ctx.appID][account.ID] = &account
 	log.Info("%s", ctx.db)
+	return nil
 }
 
 func (ctx *InMemoryAppContext) GetAccount(id persistence.AccountID) *persistence.Account {
@@ -106,7 +107,7 @@ func (ctx *InMemoryAppContext) UpdateAppOrigin(newOrigin string) error {
 	return nil
 }
 
-func (db *InMemoryDB) SaveApp(appID persistence.AppID, name string, maxAccounts int, allowedOrigin string, mailTemplates persistence.MailTemplates, admins []persistence.AccountID, privateKey rsa.PrivateKey) (*persistence.App, error) {
+func (db *InMemoryDB) SaveApp(appID persistence.AppID, name string, maxAccounts int, allowedOrigin string, mailTemplates persistence.MailTemplates, admins persistence.AppAdmins, privateKey rsa.PrivateKey) (*persistence.App, error) {
 	if db.apps[appID] != nil {
 		return nil, errors.New("Duplicate ID")
 	}

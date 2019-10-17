@@ -22,6 +22,17 @@ func buildURL(proto, host, port string) string {
 }
 
 func main() {
+	logLevelName := os.Getenv("LOG_LEVEL")
+	if logLevelName == "" {
+		log.SetLevel(log.INFO)
+	} else {
+		logLevel, err := log.LevelFromString(logLevelName)
+		if err != nil {
+			log.Fatal("Could not parse 'LOG_LEVEL' environment variable: %s", err)
+		}
+		log.SetLevel(*logLevel)
+	}
+
 	listenHost := os.Getenv("LISTEN_HOST")
 	if listenHost == "" {
 		listenHost = "localhost"

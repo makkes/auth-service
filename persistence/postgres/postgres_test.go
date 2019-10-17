@@ -1,47 +1,101 @@
-// +build integration dynamodb
+// +build integration postgres
 
-package dynamodb
+package postgres_test
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/hex"
 	"fmt"
+	mathrand "math/rand"
 	"os"
+	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	log "github.com/makkes/golib/logging"
+
 	"github.com/gofrs/uuid"
 	"github.com/makkes/assert"
-	log "github.com/makkes/golib/logging"
 	"github.com/makkes/services.makk.es/auth/persistence"
+	"github.com/makkes/services.makk.es/auth/persistence/postgres"
 	"github.com/makkes/services.makk.es/auth/utils"
 )
 
-var testTableName = fmt.Sprintf("auth.test.%d", time.Now().Unix())
+var (
+	bootstrapCommands = []string{
+		"docker run -d --name postgres -v pgdata:/var/lib/postgresql/data -p 5432:5432 postgres:12",
+		"docker exec -it postgres createuser -U postgres auth",
+	}
+	db            persistence.DB
+	containerName string
+	containerPort = "5432"
+)
+
+func startDatabase() {
+	mathrand.Seed(time.Now().UnixNano())
+	rnd := make([]byte, 3)
+	mathrand.Read(rnd)
+	containerName = fmt.Sprintf("postgres-test-%s", hex.EncodeToString(rnd))
+	containerPort = strconv.Itoa(mathrand.Intn(65536-1024) + 1024)
+
+	cmdCtx, cmdCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cmdCancel()
+	cmd := exec.CommandContext(cmdCtx, "docker", "run", "-d", "--name", containerName, "-p", containerPort+":5432", "postgres:12")
+	err := cmd.Run()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error starting database container: %s\n", err)
+		os.Exit(1)
+	}
+}
+
+func stopDatabase() {
+	cmdCtx, cmdCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cmdCancel()
+	cmd := exec.CommandContext(cmdCtx, "docker", "stop", containerName)
+	err := cmd.Run()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error stopping database container: %s\n", err)
+		os.Exit(1)
+	}
+	cmd = exec.CommandContext(cmdCtx, "docker", "rm", containerName)
+	err = cmd.Run()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error removing database container: %s\n", err)
+		os.Exit(1)
+	}
+}
 
 func TestMain(m *testing.M) {
 	log.SetLevel(log.WARN)
-	db, _ := NewDynamoDB(testTableName)
-	utils.PreloadApps(db, "test-apps.json")
-	code := m.Run()
-	_, err := db.svc.DeleteTable(&dynamodb.DeleteTableInput{
-		TableName: aws.String(testTableName),
-	})
+
+	// startDatabase()
+	// time.Sleep(2 * time.Second)
+	var err error
+	db, err = postgres.NewPostgresDB("postgres", "postgres", "localhost", containerPort, "disable")
 	if err != nil {
-		fmt.Printf("Error deleting test table: %s", err)
-		code = 999
+		fmt.Fprintf(os.Stderr, "Error initiating PostgreSQL backend: %s\n", err)
+		// stopDatabase()
+		os.Exit(1)
 	}
+	err = utils.PreloadApps(db, "test-apps.json")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error preloading data: %s\n", err)
+		// stopDatabase()
+		os.Exit(1)
+	}
+	code := m.Run()
+	// stopDatabase()
 	os.Exit(code)
 }
 
 func TestDBCreation(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
-	// the compiler ascertains for us that DynamoDB implements persistence.DB
+	// the compiler ascertains for us that PostgresDB implements persistence.DB
 	func(db persistence.DB) {}(db)
 
 	assert.NotNil(db, "Dynamo DB is nil")
@@ -49,7 +103,6 @@ func TestDBCreation(t *testing.T) {
 
 func TestGetAppReturnsNilForUnknownApp(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	app := db.GetApp(persistence.AppID{ID: "nothing to see here"})
 
@@ -58,7 +111,6 @@ func TestGetAppReturnsNilForUnknownApp(t *testing.T) {
 
 func TestGetAppReturnsNilForEmptyAppID(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	app := db.GetApp(persistence.AppID{})
 
@@ -67,7 +119,6 @@ func TestGetAppReturnsNilForEmptyAppID(t *testing.T) {
 
 func TestGetAppReturnsApp(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	app := db.GetApp(persistence.AppID{ID: "c04aac4e-6185-43db-9054-13b0774dae9e"})
 
@@ -82,20 +133,8 @@ func TestGetAppReturnsApp(t *testing.T) {
 	assert.Match("^-----BEGIN PUBLIC KEY-----.+-----END PUBLIC KEY-----$", strings.Replace(app.PublicKey, "\n", "", -1), "Unexpected public key")
 }
 
-func TestAppReturnsAppContext(t *testing.T) {
-	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
-
-	appCtx, ok := db.App(persistence.AppID{ID: "some ID"}).(*DynamoDBAppContext)
-
-	assert.True(ok, "returned value is not of type DynamoDBAppContext")
-	assert.Equal(appCtx.appID, persistence.AppID{ID: "some ID"}, "got unexpected app ID")
-	assert.Equal(appCtx.db, db, "got unexpected db pointer")
-}
-
 func TestGetAppsReturnsAllApps(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	apps := db.GetApps()
 
@@ -123,7 +162,6 @@ func TestGetAppsReturnsAllApps(t *testing.T) {
 
 func TestGetAccountReturnsNilForUnknownAccount(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	account := db.App(persistence.AppID{ID: "c04aac4e-6185-43db-9054-13b0774dae9e"}).GetAccount(persistence.AccountID{})
 
@@ -132,7 +170,6 @@ func TestGetAccountReturnsNilForUnknownAccount(t *testing.T) {
 
 func TestGetAccountReturnsNilForUnknownApp(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	uid, _ := uuid.FromString("66efbaf2-3417-4df4-a477-239af136e0d3")
 	account := db.App(persistence.AppID{ID: "does not exist"}).GetAccount(persistence.AccountID{uid})
@@ -142,7 +179,6 @@ func TestGetAccountReturnsNilForUnknownApp(t *testing.T) {
 
 func TestGetAccountReturnsAccount(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	uid, _ := uuid.FromString("e8fc7d47-aba3-40db-afdb-5caddd6fd9dd")
 	account := db.App(persistence.AppID{ID: "c04aac4e-6185-43db-9054-13b0774dae9e"}).GetAccount(persistence.AccountID{uid})
@@ -158,7 +194,6 @@ func TestGetAccountReturnsAccount(t *testing.T) {
 
 func TestGetAccountByEmailForNonexistentApp(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	account := db.App(persistence.AppID{ID: "does not exist"}).GetAccountByEmail("does not exist")
 
@@ -167,7 +202,6 @@ func TestGetAccountByEmailForNonexistentApp(t *testing.T) {
 
 func TestGetAccountByEmailIsNil(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	account := db.App(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"}).GetAccountByEmail("does not exist")
 
@@ -176,7 +210,6 @@ func TestGetAccountByEmailIsNil(t *testing.T) {
 
 func TestGetAccountByEmail(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	account := db.App(persistence.AppID{ID: "c04aac4e-6185-43db-9054-13b0774dae9e"}).GetAccountByEmail("mail@makk.es")
 
@@ -186,7 +219,6 @@ func TestGetAccountByEmail(t *testing.T) {
 
 func TestGetAccounts(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	accounts := db.App(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"}).GetAccounts()
 
@@ -204,7 +236,6 @@ func randomAccountID() persistence.AccountID {
 
 func TestSaveActivationTokenError(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 	err := db.App(persistence.AppID{ID: "c04aac4e-6185-43db-9054-13b0774dae9e"}).SaveActivationToken(randomAccountID(), "token")
 
 	assert.NotNil(err, "We expected an error to occur when saving an activation token with a non-existent account ID")
@@ -212,7 +243,6 @@ func TestSaveActivationTokenError(t *testing.T) {
 
 func TestSaveActivationTokenSuccess(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 	uid, _ := uuid.FromString("66efbaf2-3417-4df4-a477-239af136e0d3")
 	err := db.App(persistence.AppID{ID: "c04aac4e-6185-43db-9054-13b0774dae9e"}).SaveActivationToken(persistence.AccountID{uid}, "token")
 
@@ -221,7 +251,6 @@ func TestSaveActivationTokenSuccess(t *testing.T) {
 
 func TestActivationTokenEmpty(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	token := db.App(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"}).GetActivationToken(randomAccountID())
 
@@ -230,7 +259,6 @@ func TestActivationTokenEmpty(t *testing.T) {
 
 func TestActivationToken(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	token := db.App(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"}).GetActivationToken(persistence.AccountID{UUID: uuid.FromStringOrNil("ff046952-9fa3-4ec9-89ba-b602a8f22e4f")})
 
@@ -239,7 +267,6 @@ func TestActivationToken(t *testing.T) {
 
 func TestDeleteActivationToken(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	err := db.App(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"}).DeleteActivationToken(persistence.AccountID{UUID: uuid.FromStringOrNil("ff046952-9fa3-4ec9-89ba-b602a8f22e4f")})
 
@@ -248,7 +275,6 @@ func TestDeleteActivationToken(t *testing.T) {
 
 func TestSaveAppHappyPath(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	adminID, _ := uuid.FromString("492c0de9-b072-49a3-8b75-127dc19c358c")
 	privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
@@ -276,7 +302,6 @@ func TestSaveAppHappyPath(t *testing.T) {
 
 func TestUpdateAppNameFailsIfAppDoesNotExist(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	err := db.App(persistence.AppID{"does not exist"}).UpdateAppName("new name")
 
@@ -285,7 +310,6 @@ func TestUpdateAppNameFailsIfAppDoesNotExist(t *testing.T) {
 
 func TestUpdateAppNameSucceeds(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	appID := persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"}
 	app := db.GetApp(appID)
@@ -298,7 +322,6 @@ func TestUpdateAppNameSucceeds(t *testing.T) {
 
 func TestUpdateAppOriginFailsIfAppDoesNotExist(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	err := db.App(persistence.AppID{"does not exist"}).UpdateAppOrigin("new origin")
 
@@ -307,7 +330,6 @@ func TestUpdateAppOriginFailsIfAppDoesNotExist(t *testing.T) {
 
 func TestUpdateAppOriginSucceeds(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	appID := persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"}
 	app := db.GetApp(appID)
@@ -320,7 +342,6 @@ func TestUpdateAppOriginSucceeds(t *testing.T) {
 
 func TestDeleteAppSucceeds(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	appID := persistence.AppID{"c7d1a9d5-c211-4fd6-a275-393c8750cd9e"}
 	app := db.GetApp(appID)
@@ -337,7 +358,6 @@ func TestDeleteAppSucceeds(t *testing.T) {
 
 func TestSaveAppFailsWithDuplicateAppID(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
 	res, err := db.SaveApp(persistence.AppID{"c04aac4e-6185-43db-9054-13b0774dae9e"}, "another_app", 99, "https://anewapp.io", persistence.MailTemplates{}, nil, *privKey)
@@ -347,7 +367,6 @@ func TestSaveAppFailsWithDuplicateAppID(t *testing.T) {
 
 func TestSaveAppSucceedsWithDuplicateOrigin(t *testing.T) {
 	assert := assert.NewStrict(t)
-	db, _ := NewDynamoDB(testTableName)
 
 	privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
 	res, err := db.SaveApp(persistence.AppID{"anewapp2id"}, "a new app 2", 99, "https://anewapp.io", persistence.MailTemplates{}, nil, *privKey)

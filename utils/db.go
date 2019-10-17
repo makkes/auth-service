@@ -7,12 +7,17 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	log "github.com/makkes/golib/logging"
-	"github.com/makkes/services.makk.es/auth/persistence"
+	"golang.org/x/xerrors"
+
 	uuid "github.com/gofrs/uuid"
+	"github.com/makkes/services.makk.es/auth/persistence"
 )
 
-func createApp(db persistence.DB, app map[string]interface{}) []persistence.AccountID {
+func createApp(db persistence.DB, app map[string]interface{}) error {
+	appID, ok := app["id"].(string)
+	if !ok {
+		return xerrors.Errorf("app ID '%v' is not a string", app["id"])
+	}
 	res := make([]persistence.AccountID, 0)
 	var mailTemplates persistence.MailTemplates
 	if app["mailTemplates"] != nil {
@@ -29,10 +34,12 @@ func createApp(db persistence.DB, app map[string]interface{}) []persistence.Acco
 	privKeyPem, _ := pem.Decode([]byte(app["privateKey"].(string)))
 	privKey, err := x509.ParsePKCS1PrivateKey(privKeyPem.Bytes)
 	if err != nil {
-		log.Error("Error parsing private key: %s", err)
-		return nil
+		return xerrors.Errorf("error parsing private key of app %s: %w", appID, err)
 	}
-	savedApp, _ := db.SaveApp(persistence.AppID{ID: app["id"].(string)}, app["name"].(string), int(app["maxAccounts"].(float64)), app["allowedOrigin"].(string), mailTemplates, admins, *privKey)
+	savedApp, err := db.SaveApp(persistence.AppID{ID: appID}, app["name"].(string), int(app["maxAccounts"].(float64)), app["allowedOrigin"].(string), mailTemplates, admins, *privKey)
+	if err != nil {
+		return xerrors.Errorf("could not save app %s: %s", appID, err)
+	}
 	if app["users"] != nil {
 		for _, accMapIf := range app["users"].([]interface{}) {
 			accMap := accMapIf.(map[string]interface{})
@@ -49,50 +56,56 @@ func createApp(db persistence.DB, app map[string]interface{}) []persistence.Acco
 				newID, err = uuid.NewV4()
 			}
 			if err != nil {
-				log.Error("Error generating ID for preload user %s: %s", accMap, err)
-				continue
+				return xerrors.Errorf("error generating ID for preload user %s: %s", accMap, err)
 			}
 			hash, err := persistence.NewHash(accMap["password"].(string))
 			if err != nil {
-				log.Error("Error generating password hash for preload user %s: %s", accMap, err)
-				continue
+				return xerrors.Errorf("error generating password hash for preload user %s: %s", accMap, err)
 			}
 			newUser := persistence.Account{
-				ID:           persistence.AccountID{newID},
+				ID:           persistence.AccountID{UUID: newID},
 				Email:        accMap["email"].(string),
 				PasswordHash: hash,
 				Active:       true,
 				Roles:        roles,
 			}
-			db.App(savedApp.ID).SaveAccount(newUser)
+			err = db.App(savedApp.ID).SaveAccount(newUser)
+			if err != nil {
+				return xerrors.Errorf("error preloading user %s: %s", newUser, err)
+			}
 			if accMap["activationToken"] != nil {
-				db.App(savedApp.ID).SaveActivationToken(newUser.ID, accMap["activationToken"].(string))
+				err := db.App(savedApp.ID).SaveActivationToken(newUser.ID, accMap["activationToken"].(string))
+				if err != nil {
+					return xerrors.Errorf("error saving activation token: %w", err)
+				}
 			}
 			res = append(res, newUser.ID)
-			if err != nil {
-				log.Error("Error preloading user %s: %s", newUser, err)
-			}
 		}
 	}
-	return res
+	return nil
 }
 
-func PreloadApps(db persistence.DB, fileName string) {
+func PreloadApps(db persistence.DB, fileName string) error {
 	bytes, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		log.Error("Error loading apps file: %s", err)
-		return
+		return xerrors.Errorf("Error loading apps file: %w", err)
 	}
 	var apps map[string]interface{}
 	err = json.Unmarshal(bytes, &apps)
 	if err != nil {
-		log.Error("Cannot preload apps: %s", err)
-		return
+		return xerrors.Errorf("cannot preload apps: %w", err)
 	}
 	adminApp := apps["admin"]
 	createApp(db, adminApp.(map[string]interface{}))
 	otherApps := apps["others"]
-	for _, app := range otherApps.([]interface{}) {
-		createApp(db, app.(map[string]interface{}))
+	if otherApps == nil {
+		return nil
 	}
+	for _, app := range otherApps.([]interface{}) {
+		err := createApp(db, app.(map[string]interface{}))
+		if err != nil {
+			return xerrors.Errorf("error creating app: %w", err)
+		}
+	}
+	return nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	log "github.com/makkes/golib/logging"
 	"github.com/makkes/services.makk.es/auth/persistence"
+	"golang.org/x/xerrors"
 )
 
 type DynamoDB struct {
@@ -183,7 +184,7 @@ func (d *DynamoDB) GetApps() []*persistence.App {
 	return apps
 }
 
-func (d *DynamoDB) SaveApp(id persistence.AppID, name string, maxAccounts int, allowedOrigin string, mailTemplates persistence.MailTemplates, admins []persistence.AccountID, privateKey rsa.PrivateKey) (*persistence.App, error) {
+func (d *DynamoDB) SaveApp(id persistence.AppID, name string, maxAccounts int, allowedOrigin string, mailTemplates persistence.MailTemplates, admins persistence.AppAdmins, privateKey rsa.PrivateKey) (*persistence.App, error) {
 	newApp := persistence.App{
 		ID:            id,
 		Name:          name,
@@ -323,7 +324,7 @@ func (d *DynamoDBAppContext) GetAccountByEmail(email string) *persistence.Accoun
 	return &account
 }
 
-func (d *DynamoDBAppContext) SaveAccount(account persistence.Account) {
+func (d *DynamoDBAppContext) SaveAccount(account persistence.Account) error {
 	d.db.log.Info("Saving account %s in app %s", account, d.appID.ID)
 	av := make(map[string]*dynamodb.AttributeValue)
 	av["appID"] = &dynamodb.AttributeValue{S: aws.String(d.appID.ID)}
@@ -337,8 +338,7 @@ func (d *DynamoDBAppContext) SaveAccount(account persistence.Account) {
 	av["roles"] = &dynamodb.AttributeValue{L: roles}
 	avHash, err := dynamodbattribute.MarshalMap(account.PasswordHash)
 	if err != nil {
-		d.db.log.Error("Could not marshal password %v: %s", account.PasswordHash, err)
-		return
+		return xerrors.Errorf("could not marshal password %v: %w", account.PasswordHash, err)
 	}
 	av["passwordHash"] = &dynamodb.AttributeValue{M: avHash}
 
@@ -350,11 +350,11 @@ func (d *DynamoDBAppContext) SaveAccount(account persistence.Account) {
 
 	out, err := d.db.svc.PutItem(input)
 	if err != nil {
-		d.db.log.Error("Could not put account item: %s", err)
-		return
+		return xerrors.Errorf("could not put account item: %w", err)
 	}
 
 	d.db.log.Info("Consumed capacity for saving account: %s", out.ConsumedCapacity)
+	return nil
 }
 
 func (d *DynamoDBAppContext) GetAccount(id persistence.AccountID) *persistence.Account {

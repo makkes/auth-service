@@ -3,3 +3,4 @@
 /cmd/auth
 /cmd/*.json
 .*.swp
+/build

@@ -3,8 +3,8 @@ package business
 import (
 	"crypto/rsa"
 
-	"github.com/makkes/services.makk.es/auth/persistence"
 	uuid "github.com/gofrs/uuid"
+	"github.com/makkes/services.makk.es/auth/persistence"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -31,7 +31,7 @@ func (m *MockDB) App(appID persistence.AppID) persistence.AppContext {
 	return args.Get(0).(persistence.AppContext)
 }
 
-func (m *MockDB) SaveApp(appID persistence.AppID, name string, maxAccounts int, allowedOrigin string, mailTemplates persistence.MailTemplates, admins []persistence.AccountID, privateKey rsa.PrivateKey) (*persistence.App, error) {
+func (m *MockDB) SaveApp(appID persistence.AppID, name string, maxAccounts int, allowedOrigin string, mailTemplates persistence.MailTemplates, admins persistence.AppAdmins, privateKey rsa.PrivateKey) (*persistence.App, error) {
 	args := m.Called(appID, name, maxAccounts, allowedOrigin, mailTemplates, admins, privateKey)
 	arg0 := args.Get(0)
 	if arg0 == nil {
@@ -80,8 +80,12 @@ func (m *MockAppCtx) GetAccounts() []*persistence.Account {
 	return args.Get(0).([]*persistence.Account)
 }
 
-func (m *MockAppCtx) SaveAccount(account persistence.Account) {
-	m.Called(account)
+func (m *MockAppCtx) SaveAccount(account persistence.Account) error {
+	args := m.Called(account)
+	if len(args) > 0 {
+		return args.Get(0).(error)
+	}
+	return nil
 }
 
 func (m *MockAppCtx) SaveActivationToken(accountID persistence.AccountID, token string) error {
