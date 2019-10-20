@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/hex"
+	"flag"
 	"fmt"
 	mathrand "math/rand"
 	"os"
@@ -30,9 +31,10 @@ var (
 		"docker run -d --name postgres -v pgdata:/var/lib/postgresql/data -p 5432:5432 postgres:12",
 		"docker exec -it postgres createuser -U postgres auth",
 	}
-	db            persistence.DB
-	containerName string
-	containerPort = "5432"
+	db                persistence.DB
+	containerName     string
+	containerPort     = "5432"
+	bootstrapDatabase = flag.Bool("bootstrap-database", false, "")
 )
 
 func startDatabase() {
@@ -71,25 +73,34 @@ func stopDatabase() {
 
 func TestMain(m *testing.M) {
 	log.SetLevel(log.WARN)
+	flag.Parse()
 
-	// startDatabase()
-	// time.Sleep(2 * time.Second)
+	if *bootstrapDatabase {
+		startDatabase()
+		time.Sleep(2 * time.Second)
+	}
 
 	var err error
 	db, err = postgres.NewPostgresDB("postgres", "", "postgres", "localhost", containerPort, "disable")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error initiating PostgreSQL backend: %s\n", err)
-		// stopDatabase()
+		if *bootstrapDatabase {
+			stopDatabase()
+		}
 		os.Exit(1)
 	}
 	err = utils.PreloadApps(db, "test-apps.json")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error preloading data: %s\n", err)
-		// stopDatabase()
+		if *bootstrapDatabase {
+			stopDatabase()
+		}
 		os.Exit(1)
 	}
 	code := m.Run()
-	// stopDatabase()
+	if *bootstrapDatabase {
+		stopDatabase()
+	}
 	os.Exit(code)
 }
 
