@@ -105,15 +105,17 @@ func (aih applicationID) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type authMiddleware struct {
-	h  http.Handler
-	db persistence.DB
+	h                    http.Handler
+	db                   persistence.DB
+	checkTokenExpiration bool
 }
 
-func Authenticate(db persistence.DB) func(http.Handler) http.Handler {
+func Authenticate(db persistence.DB, checkTokenExpiration bool) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		auth := authMiddleware{
-			h:  h,
-			db: db,
+			h:                    h,
+			db:                   db,
+			checkTokenExpiration: checkTokenExpiration,
 		}
 		return auth
 	}
@@ -131,7 +133,7 @@ func (auth authMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	app := extractAppFromRequest(r, auth.db)
-	claims, err := utils.ParseJWT(authHeader[1], app.PrivateKey.Key.Public())
+	claims, err := utils.ParseJWT(authHeader[1], app.PrivateKey.Key.Public(), auth.checkTokenExpiration, time.Now())
 	if err != nil {
 		if _, ok := err.(*jwt.ValidationError); ok {
 			if claims != nil {
@@ -169,7 +171,7 @@ func (auth authMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	authentication := business.Authentication{*account, *app}
+	authentication := business.Authentication{*account, *app, *claims}
 	log.Info("Authenticated user: %s, %s", authentication.Account.Email, authentication.App.Name)
 	auth.h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), AuthContextKey, authentication)))
 }

@@ -1,6 +1,7 @@
 package business
 
 import (
+	"github.com/dgrijalva/jwt-go"
 	"github.com/makkes/services.makk.es/auth/persistence"
 )
 
@@ -17,6 +18,7 @@ type Validatable interface {
 }
 
 type Authentication struct {
-	Account persistence.Account
-	App     persistence.App
+	Account     persistence.Account
+	App         persistence.App
+	TokenClaims jwt.StandardClaims
 }

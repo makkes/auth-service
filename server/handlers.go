@@ -211,6 +211,19 @@ func (h *Handlers) GetAppHandler(w http.ResponseWriter, r *http.Request) {
 	utils.ReplyJSON(w, http.StatusOK, app, nil)
 }
 
+func (h *Handlers) RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+	auth := r.Context().Value(middleware.AuthContextKey).(business.Authentication)
+	app := r.Context().Value(middleware.AppIDContextKey).(*persistence.App)
+	token, err := h.accountService.RefreshAuthenticationToken(&app.PrivateKey.Key, app.ID, auth.Account.ID)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(token))
+}
+
 func (h *Handlers) CreateTokenHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {

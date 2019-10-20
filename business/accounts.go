@@ -6,11 +6,13 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/xerrors"
+
+	uuid "github.com/gofrs/uuid"
 	log "github.com/makkes/golib/logging"
 	"github.com/makkes/services.makk.es/auth/mailer"
 	"github.com/makkes/services.makk.es/auth/persistence"
 	"github.com/makkes/services.makk.es/auth/utils"
-	uuid "github.com/gofrs/uuid"
 )
 
 var ActivationError = errors.New("Account could not be activated")
@@ -65,9 +67,17 @@ func (s *AccountService) NewAppContext(app *persistence.App) *AppContext {
 func (s *AccountService) CreateAuthenticationToken(privKey *rsa.PrivateKey, appID persistence.AppID, email, password string) (string, error) {
 	account := s.db.App(appID).GetAccountByEmail(email)
 	if account == nil || !account.Active || !account.PasswordHash.Matches(password) {
-		return "", errors.New("Account doesn't exist, is inactive or password is wrong")
+		return "", xerrors.New("Account doesn't exist, is inactive or password is wrong")
 	}
 	return utils.CreateJWT(privKey, account.ID, appID, time.Now())
+}
+
+func (s *AccountService) RefreshAuthenticationToken(privKey *rsa.PrivateKey, appID persistence.AppID, accountID persistence.AccountID) (string, error) {
+	account := s.db.App(appID).GetAccount(accountID)
+	if account == nil || !account.Active {
+		return "", xerrors.New("Account doesn't exist or is inactive")
+	}
+	return utils.CreateJWT(privKey, accountID, appID, time.Now())
 }
 
 func (ctx *AppContext) CreateAccount(u AccountCreation) (*persistence.Account, error) {
@@ -125,6 +135,9 @@ func (s *AccountService) GetAccounts(appID persistence.AppID, authID persistence
 
 func (s *AccountService) GetAccount(appID persistence.AppID, authenticatedUserID persistence.AccountID, id persistence.AccountID) *persistence.Account {
 	authenticatedUser := s.db.App(appID).GetAccount(authenticatedUserID)
+	if authenticatedUser == nil || !authenticatedUser.Active {
+		return nil
+	}
 	account := s.db.App(appID).GetAccount(id)
 	if account != nil && ((account.ID == authenticatedUserID && account.Active) || authenticatedUser.HasRole("admin")) {
 		return account

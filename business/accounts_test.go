@@ -5,6 +5,8 @@ import (
 	"crypto/rsa"
 	"testing"
 
+	"github.com/gofrs/uuid"
+
 	"github.com/makkes/assert"
 	"github.com/makkes/services.makk.es/auth/persistence"
 	"github.com/stretchr/testify/mock"
@@ -53,6 +55,53 @@ func TestNewAppContextReturnsCtx(t *testing.T) {
 
 	assert.NotNil(ctx, "Expeccted non-nil AppContext")
 
+}
+
+func TestRefreshAuthenticationTokenWithUnknownAccount(t *testing.T) {
+	assert := assert.NewAssert(t)
+
+	mockDB, mockAppCtx, _, _, _ := setupMocks(persistence.AppID{"context app"})
+	mockDB.On("App", mock.Anything).Return(mockAppCtx)
+	mockAppCtx.On("GetAccount", mock.Anything).Return(nil)
+	as := NewAccountService(mockDB, nil)
+
+	token, err := as.RefreshAuthenticationToken(nil, persistence.AppID{"any app"}, persistence.AccountID{})
+
+	assert.NotNil(err, "Expected non-nil error")
+	assert.Equal(token, "", "Expected empty token")
+}
+
+func TestRefreshAuthenticationTokenWithInactiveAccount(t *testing.T) {
+	assert := assert.NewAssert(t)
+
+	mockDB, mockAppCtx, _, _, _ := setupMocks(persistence.AppID{"context app"})
+	mockDB.On("App", mock.Anything).Return(mockAppCtx)
+	mockAppCtx.On("GetAccount", mock.Anything).Return(&persistence.Account{
+		Active: false,
+	})
+	as := NewAccountService(mockDB, nil)
+
+	token, err := as.RefreshAuthenticationToken(nil, persistence.AppID{"any app"}, persistence.AccountID{})
+
+	assert.NotNil(err, "Expected non-nil error")
+	assert.Equal(token, "", "Expected empty token")
+}
+
+func TestRefreshAuthenticationToken(t *testing.T) {
+	assert := assert.NewAssert(t)
+
+	mockDB, mockAppCtx, _, _, _ := setupMocks(persistence.AppID{"context app"})
+	mockDB.On("App", mock.Anything).Return(mockAppCtx)
+	mockAppCtx.On("GetAccount", mock.Anything).Return(&persistence.Account{
+		Active: true,
+	})
+	as := NewAccountService(mockDB, nil)
+
+	privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
+	token, err := as.RefreshAuthenticationToken(privKey, persistence.AppID{"does not exist"}, persistence.AccountID{})
+
+	assert.Nil(err, "Expected nil error")
+	assert.True(len(token) > 0, "Expected non-empty token")
 }
 
 func TestCreateAuthenticationTokenWithUnknownAccount(t *testing.T) {
@@ -200,4 +249,119 @@ func TestCreateAccountSendsActivationTokenAndReturnsAccount(t *testing.T) {
 	mockDB.AssertExpectations(t)
 	mockAppCtx.AssertExpectations(t)
 	mockMailer.AssertExpectations(t)
+}
+
+func TestGetAccountWithUnknownAuthenticatedUserReturnsNil(t *testing.T) {
+	mockDB, mockAppCtx, _, appID, _ := setupMocks(persistence.AppID{"context app"})
+	mockDB.On("App", mock.Anything).Return(mockAppCtx)
+	authAccountUUID, _ := uuid.NewV4()
+	authAccountID := persistence.AccountID{authAccountUUID}
+	mockAppCtx.On("GetAccount", authAccountID).Return(nil)
+	as := NewAccountService(mockDB, nil)
+
+	account := as.GetAccount(appID, authAccountID, persistence.AccountID{})
+
+	assert := assert.NewAssert(t)
+	assert.Nil(account, "Expected nil account")
+}
+
+func TestGetAccountWithUnknownUserReturnsNil(t *testing.T) {
+	mockDB, mockAppCtx, accountID, appID, _ := setupMocks(persistence.AppID{"context app"})
+	mockDB.On("App", mock.Anything).Return(mockAppCtx)
+	authAccountUUID, _ := uuid.NewV4()
+	authAccountID := persistence.AccountID{authAccountUUID}
+	authAccount := persistence.Account{ID: authAccountID}
+	mockAppCtx.On("GetAccount", authAccountID).Return(&authAccount)
+	mockAppCtx.On("GetAccount", accountID).Return(nil)
+	as := NewAccountService(mockDB, nil)
+
+	account := as.GetAccount(appID, authAccountID, accountID)
+
+	assert := assert.NewAssert(t)
+	assert.Nil(account, "Expected nil account")
+}
+
+func TestGetAccountWithDifferentUserReturnsNil(t *testing.T) {
+	mockDB, mockAppCtx, _, appID, _ := setupMocks(persistence.AppID{"context app"})
+	mockDB.On("App", mock.Anything).Return(mockAppCtx)
+	authAccountUUID, _ := uuid.NewV4()
+	authAccountID := persistence.AccountID{authAccountUUID}
+	authAccount := persistence.Account{ID: authAccountID}
+	mockAppCtx.On("GetAccount", authAccountID).Return(&authAccount)
+	differentAccountUUID, _ := uuid.NewV4()
+	differentAccountID := persistence.AccountID{differentAccountUUID}
+	differentAccount := persistence.Account{ID: differentAccountID, Active: true}
+	mockAppCtx.On("GetAccount", differentAccountID).Return(&differentAccount)
+	as := NewAccountService(mockDB, nil)
+
+	account := as.GetAccount(appID, authAccountID, differentAccountID)
+
+	assert := assert.NewAssert(t)
+	assert.Nil(account, "Expected nil account")
+}
+
+func TestGetAccountWithDifferentUserThatIsAdminButInactiveReturnsNil(t *testing.T) {
+	mockDB, mockAppCtx, _, appID, _ := setupMocks(persistence.AppID{"context app"})
+	mockDB.On("App", mock.Anything).Return(mockAppCtx)
+	authAccountUUID, _ := uuid.NewV4()
+	authAccountID := persistence.AccountID{authAccountUUID}
+	authAccount := persistence.Account{ID: authAccountID, Active: false, Roles: persistence.Roles{"admin"}}
+	mockAppCtx.On("GetAccount", authAccountID).Return(&authAccount)
+	differentAccountUUID, _ := uuid.NewV4()
+	differentAccountID := persistence.AccountID{differentAccountUUID}
+	differentAccount := persistence.Account{ID: differentAccountID, Active: true}
+	mockAppCtx.On("GetAccount", differentAccountID).Return(&differentAccount)
+	as := NewAccountService(mockDB, nil)
+
+	account := as.GetAccount(appID, authAccountID, differentAccountID)
+
+	assert := assert.NewAssert(t)
+	assert.Nil(account, "Expected nil account")
+}
+
+func TestGetAccountWithDifferentUserThatIsAdminReturnsAccount(t *testing.T) {
+	mockDB, mockAppCtx, _, appID, _ := setupMocks(persistence.AppID{"context app"})
+	mockDB.On("App", mock.Anything).Return(mockAppCtx)
+	authAccountUUID, _ := uuid.NewV4()
+	authAccountID := persistence.AccountID{authAccountUUID}
+	authAccount := persistence.Account{ID: authAccountID, Active: true, Roles: persistence.Roles{"admin"}}
+	mockAppCtx.On("GetAccount", authAccountID).Return(&authAccount)
+	differentAccountUUID, _ := uuid.NewV4()
+	differentAccountID := persistence.AccountID{differentAccountUUID}
+	differentAccount := persistence.Account{ID: differentAccountID, Active: true}
+	mockAppCtx.On("GetAccount", differentAccountID).Return(&differentAccount)
+	as := NewAccountService(mockDB, nil)
+
+	account := as.GetAccount(appID, authAccountID, differentAccountID)
+
+	assert := assert.NewAssert(t)
+	assert.NotNil(account, "Expected non-nil account")
+	assert.Equal(account, &differentAccount, "Expected different account")
+}
+
+func TestGetAccountWithInactiveUserReturnsNil(t *testing.T) {
+	mockDB, mockAppCtx, accountID, appID, _ := setupMocks(persistence.AppID{"context app"})
+	inactiveAccount := persistence.Account{ID: accountID, Active: false}
+	mockDB.On("App", mock.Anything).Return(mockAppCtx)
+	mockAppCtx.On("GetAccount", accountID).Return(&inactiveAccount)
+	as := NewAccountService(mockDB, nil)
+
+	account := as.GetAccount(appID, accountID, accountID)
+
+	assert := assert.NewAssert(t)
+	assert.Nil(account, "Expected nil account")
+}
+
+func TestGetAccountWithActiveUserReturnsAccount(t *testing.T) {
+	mockDB, mockAppCtx, accountID, appID, _ := setupMocks(persistence.AppID{"context app"})
+	activeAccount := persistence.Account{ID: accountID, Active: true}
+	mockDB.On("App", mock.Anything).Return(mockAppCtx)
+	mockAppCtx.On("GetAccount", accountID).Return(&activeAccount)
+	as := NewAccountService(mockDB, nil)
+
+	account := as.GetAccount(appID, accountID, accountID)
+
+	assert := assert.NewAssert(t)
+	assert.NotNil(account, "Expected non-nil account")
+	assert.Equal(account, &activeAccount, "Expected another account")
 }
