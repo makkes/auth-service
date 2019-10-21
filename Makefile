@@ -3,10 +3,10 @@ DEFAULT_TARGET: build
 VERSION := $(shell git describe --tags $(git rev-parse HEAD) 2>/dev/null || git rev-parse --short HEAD)
 LDFLAGS := -X "github.com/makkes/services.makk.es/auth/server.version=${VERSION}"
 
-CURRENT_DIR=$(shell pwd)
-BUILD_DIR=build
-BINARY_NAME=auth
-SRCS := $(shell find . -type f -name '*.go')
+CURRENT_DIR = $(shell pwd)
+BUILD_DIR = build
+BINARY_NAME = auth
+DOCKER_IMAGE = makkes/auth-service:latest
 
 .PHONY: build
 build:
@@ -35,8 +35,8 @@ clean:
 
 .PHONY: image-build
 image-build:
-	docker build -t makkes/auth.services.makk.es:latest --build-arg VERSION="${VERSION}" .
+	docker build -t $(DOCKER_IMAGE) --build-arg VERSION="${VERSION}" .
 
 .PHONY: image-push
 image-push:
-	docker push makkes/auth.services.makk.es:latest
+	docker push $(DOCKER_IMAGE)
