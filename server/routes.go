@@ -37,12 +37,12 @@ func (s *Server) routes() {
 	openRoutes.Use(appID)
 	openRoutes.Handle("/accounts/{id}/active", http.HandlerFunc(s.handlers.ActivateHandler)).Methods("PUT")
 	openRoutes.Handle("/accounts", handlers.ContentTypeHandler(http.HandlerFunc(s.handlers.CreateAccountHandler), "application/json")).Methods("POST")
-	openRoutes.HandleFunc("/tokens", s.handlers.CreateTokenHandler).Methods("POST").Headers("content-type", "application/x-www-form-urlencoded")
+	openRoutes.HandleFunc("/tokens", s.handlers.CreateTokenHandler).Methods("POST").HeadersRegexp("content-type", "^application/x-www-form-urlencoded(; *charset=.*)*$")
 
 	// this router is a special-purpose one only used for refreshing an existing, but expired JWT
 	halfAuthenticatedRoutes := s.router.NewRoute().Subrouter()
 	halfAuthenticatedRoutes.Use(middleware.Authenticate(s.db, false))
-	halfAuthenticatedRoutes.HandleFunc("/tokens", s.handlers.RefreshTokenHandler).Methods("POST").Headers("content-type", "application/jwt")
+	halfAuthenticatedRoutes.HandleFunc("/tokens", s.handlers.RefreshTokenHandler).Methods("POST").Headers("content-type", "^application/jwt(; *charset=.*)*$")
 
 	s.router.HandleFunc("/version", handleVersion(s.version)).Methods("GET")
 
