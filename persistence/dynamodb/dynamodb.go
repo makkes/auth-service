@@ -84,13 +84,16 @@ func NewDynamoDB(tableName string) (*DynamoDB, error) {
 		},
 		TableName: table,
 	})
-	svc.UpdateTimeToLive(&dynamodb.UpdateTimeToLiveInput{
+	_, updateTTLError := svc.UpdateTimeToLive(&dynamodb.UpdateTimeToLiveInput{
 		TableName: table,
 		TimeToLiveSpecification: &dynamodb.TimeToLiveSpecification{
 			AttributeName: aws.String("ttl"),
 			Enabled:       aws.Bool(true),
 		},
 	})
+	if updateTTLError != nil {
+		logger.Warn("Error updating TTL: %v", updateTTLError)
+	}
 
 	if err != nil {
 		// when a ResourceInUseException occurs we assume the table already exists and continue
@@ -254,7 +257,7 @@ func (d *DynamoDB) DeleteApp(id persistence.AppID) error {
 	d.log.Info("Consumed capacity for deleting app: %s", res.ConsumedCapacity)
 
 	accounts := d.App(id).GetAccounts()
-	if accounts != nil && len(accounts) > 0 {
+	if len(accounts) > 0 {
 		for _, account := range accounts {
 			res, err := d.svc.DeleteItem(&dynamodb.DeleteItemInput{
 				TableName: d.table,

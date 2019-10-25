@@ -20,5 +20,8 @@ func ReplyJSON(w http.ResponseWriter, status int, res interface{}, headers map[s
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
-	w.Write(marshalledRes)
+	_, writeErr := w.Write(marshalledRes)
+	if writeErr != nil {
+		log.Info("Error sending body: %v", writeErr)
+	}
 }

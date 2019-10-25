@@ -28,7 +28,7 @@ func extractAppFromRequest(r *http.Request, db persistence.DB) *persistence.App 
 		log.Info("Received request without X-Application-ID")
 		return nil
 	}
-	return db.GetApp(persistence.AppID{appID})
+	return db.GetApp(persistence.AppID{ID: appID})
 }
 
 type accept struct {
@@ -137,7 +137,7 @@ func (auth authMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if _, ok := err.(*jwt.ValidationError); ok {
 			if claims != nil {
-				expiredSinceSeconds := time.Now().Sub(time.Unix(claims.ExpiresAt, 0)) / time.Second
+				expiredSinceSeconds := time.Since(time.Unix(claims.ExpiresAt, 0)) / time.Second
 				log.Info("Denying access, token is expired since %d seconds", expiredSinceSeconds)
 			}
 		} else {
@@ -171,7 +171,7 @@ func (auth authMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	authentication := business.Authentication{*account, *app, *claims}
+	authentication := business.Authentication{Account: *account, App: *app, TokenClaims: *claims}
 	log.Info("Authenticated user: %s, %s", authentication.Account.Email, authentication.App.Name)
 	auth.h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), AuthContextKey, authentication)))
 }

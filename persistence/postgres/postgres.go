@@ -131,21 +131,29 @@ func (db *PostgresDB) GetApps() []*persistence.App {
 func (ctx *PostgresAppContext) SaveActivationToken(accountID persistence.AccountID, token string) error {
 	tx, err := ctx.db.db.Begin()
 	if err != nil {
-		tx.Rollback()
 		return xerrors.Errorf("could not start transaction: %w", err)
 	}
 
 	var accountCnt int
 	if err := tx.QueryRow(sqlAccountExists, accountID.UUID.String()).Scan(&accountCnt); err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			ctx.db.log.Warn("Error rolling back tx: %v", rollbackErr)
+		}
 		return xerrors.Errorf("error querying for existing account %s in token table: %w", err)
 	}
 	if accountCnt == 0 {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			ctx.db.log.Warn("Error rolling back tx: %v", rollbackErr)
+		}
 		return xerrors.Errorf("account %s doesn't exists, no token can be saved", accountID)
 	}
 	if _, err := tx.Exec(sqlInsertActivationToken, ctx.appID.ID, accountID.UUID.String(), token); err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			ctx.db.log.Warn("Error rolling back tx: %v", rollbackErr)
+		}
 		return xerrors.Errorf("error inserting activation token for account %s: %w", accountID, err)
 	}
 	if err = tx.Commit(); err != nil {

@@ -18,7 +18,6 @@ func createApp(db persistence.DB, app map[string]interface{}) error {
 	if !ok {
 		return xerrors.Errorf("app ID '%v' is not a string", app["id"])
 	}
-	res := make([]persistence.AccountID, 0)
 	var mailTemplates persistence.MailTemplates
 	if app["mailTemplates"] != nil {
 		mailTemplates.ActivateAccount = app["mailTemplates"].(map[string]interface{})["activateAccount"].(string)
@@ -79,7 +78,6 @@ func createApp(db persistence.DB, app map[string]interface{}) error {
 					return xerrors.Errorf("error saving activation token: %w", err)
 				}
 			}
-			res = append(res, newUser.ID)
 		}
 	}
 	return nil
@@ -96,7 +94,10 @@ func PreloadApps(db persistence.DB, fileName string) error {
 		return xerrors.Errorf("cannot preload apps: %w", err)
 	}
 	adminApp := apps["admin"]
-	createApp(db, adminApp.(map[string]interface{}))
+	createErr := createApp(db, adminApp.(map[string]interface{}))
+	if createErr != nil {
+		return xerrors.Errorf("cannot create app: %w", err)
+	}
 	otherApps := apps["others"]
 	if otherApps == nil {
 		return nil

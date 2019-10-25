@@ -56,7 +56,10 @@ func (h *Handlers) DeleteAppHandler(w http.ResponseWriter, r *http.Request) {
 		default:
 			log.Info("Error deleting app %s: %s", appID, err)
 			w.WriteHeader(http.StatusInternalServerError)
-			io.WriteString(w, "An unknown server error occurred")
+			_, writeErr := io.WriteString(w, "An unknown server error occurred")
+			if writeErr != nil {
+				log.Info("Error sending body: %v", writeErr)
+			}
 		}
 		return
 	}
@@ -77,7 +80,10 @@ func (h *Handlers) CreateApp(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Info("Error unmarshaling body: %s", err)
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		io.WriteString(w, err.Error())
+		_, writeErr := io.WriteString(w, err.Error())
+		if writeErr != nil {
+			log.Info("Error sending body: %v", writeErr)
+		}
 		return
 	}
 	valRes := newApp.Validate()
@@ -90,7 +96,10 @@ func (h *Handlers) CreateApp(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Info("Error creating app: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(w, "An unknown server error occurred")
+		_, writeErr := io.WriteString(w, "An unknown server error occurred")
+		if writeErr != nil {
+			log.Info("Error sending body: %v", writeErr)
+		}
 		return
 	}
 	utils.ReplyJSON(w, http.StatusCreated, createdApp, map[string]string{
@@ -111,7 +120,10 @@ func (h *Handlers) UpdateAppOriginHandler(w http.ResponseWriter, r *http.Request
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		io.WriteString(w, err.Error())
+		_, writeErr := io.WriteString(w, err.Error())
+		if writeErr != nil {
+			log.Info("Error sending body: %v", writeErr)
+		}
 		return
 	}
 	newOrigin := business.AppOrigin{
@@ -133,7 +145,10 @@ func (h *Handlers) UpdateAppOriginHandler(w http.ResponseWriter, r *http.Request
 		default:
 			log.Info("Error updating app origin %s to %s: %s", appID, newOrigin, err)
 			w.WriteHeader(http.StatusInternalServerError)
-			io.WriteString(w, "An unknown server error occurred")
+			_, writeErr := io.WriteString(w, "An unknown server error occurred")
+			if writeErr != nil {
+				log.Info("Error sending body: %v", writeErr)
+			}
 		}
 		return
 	}
@@ -154,7 +169,10 @@ func (h *Handlers) UpdateAppNameHandler(w http.ResponseWriter, r *http.Request) 
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		io.WriteString(w, err.Error())
+		_, writeErr := io.WriteString(w, err.Error())
+		if writeErr != nil {
+			log.Info("Error sending body: %v", writeErr)
+		}
 		return
 	}
 	newName := business.AppName{
@@ -176,7 +194,10 @@ func (h *Handlers) UpdateAppNameHandler(w http.ResponseWriter, r *http.Request) 
 		default:
 			log.Info("Error updating app name %s to %s: %s", appID, newName, err)
 			w.WriteHeader(http.StatusInternalServerError)
-			io.WriteString(w, "An unknown server error occurred")
+			_, writeErr := io.WriteString(w, "An unknown server error occurred")
+			if writeErr != nil {
+				log.Info("Error sending body: %v", writeErr)
+			}
 		}
 		return
 	}
@@ -221,7 +242,10 @@ func (h *Handlers) RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(token))
+	_, writeErr := w.Write([]byte(token))
+	if writeErr != nil {
+		log.Info("Error sending body: %v", writeErr)
+	}
 }
 
 func (h *Handlers) CreateTokenHandler(w http.ResponseWriter, r *http.Request) {
@@ -244,7 +268,10 @@ func (h *Handlers) CreateTokenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(token))
+	_, writeErr := w.Write([]byte(token))
+	if writeErr != nil {
+		log.Info("Error sending body: %v", writeErr)
+	}
 }
 
 func (h *Handlers) ActivateHandler(w http.ResponseWriter, r *http.Request) {
@@ -317,7 +344,10 @@ func (h *Handlers) CreateAccountHandler(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		log.Info("Error unmarshaling body: %s", err)
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		io.WriteString(w, err.Error())
+		_, writeErr := io.WriteString(w, err.Error())
+		if writeErr != nil {
+			log.Info("Error sending body: %v", writeErr)
+		}
 		return
 	}
 

@@ -15,7 +15,7 @@ func TestGetAppShouldReturnNilIfUserIsUnknown(t *testing.T) {
 	assert := assert.NewAssert(t)
 
 	// given
-	mockDB, mockAppCtx, accountID, appID, ctxApp := setupMocks(persistence.AppID{"context app app"})
+	mockDB, mockAppCtx, accountID, appID, ctxApp := setupMocks(persistence.AppID{ID: "context app app"})
 	mockDB.On("App", ctxApp.ID).Return(mockAppCtx)
 	mockAppCtx.On("GetAccount", accountID).Return(nil)
 	service := NewAppService(mockDB)
@@ -32,7 +32,7 @@ func TestGetAppShouldReturnNilIfCtxAppIsNotAdminApp(t *testing.T) {
 	assert := assert.NewAssert(t)
 
 	// given
-	mockDB, mockAppCtx, accountID, appID, ctxApp := setupMocks(persistence.AppID{"not admin app"})
+	mockDB, mockAppCtx, accountID, appID, ctxApp := setupMocks(persistence.AppID{ID: "not admin app"})
 	mockDB.On("App", ctxApp.ID).Return(mockAppCtx)
 	mockAppCtx.On("GetAccount", accountID).Return(&persistence.Account{})
 	service := NewAppService(mockDB)
@@ -49,7 +49,7 @@ func TestGetAppShouldReturnAppIfCtxAppIsAdminApp(t *testing.T) {
 	assert := assert.NewAssert(t)
 
 	// given
-	mockDB, mockAppCtx, accountID, appID, ctxApp := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, mockAppCtx, accountID, appID, ctxApp := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	resApp := &persistence.App{
 		ID:            appID,
 		Name:          "Ctx App Name",
@@ -78,7 +78,7 @@ func TestCreateAppShouldFailWhenNotInAdminApp(t *testing.T) {
 
 	service := NewAppService(nil).NewAuthCtx(Authentication{
 		Account: persistence.Account{},
-		App:     persistence.App{ID: persistence.AppID{"not admin app"}},
+		App:     persistence.App{ID: persistence.AppID{ID: "not admin app"}},
 	})
 	res, err := service.CreateApp(AppCreation{}, nil)
 
@@ -90,7 +90,7 @@ func TestCreateAppShouldFailWhenNotInAdminApp(t *testing.T) {
 func TestCreateAppShouldFailWhenDBFails(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, _, _, _, ctxApp := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, _, _, _, ctxApp := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	service := NewAppService(mockDB).NewAuthCtx(Authentication{
 		Account: persistence.Account{},
 		App:     persistence.App{ID: ctxApp.ID},
@@ -106,9 +106,9 @@ func TestCreateAppShouldFailWhenDBFails(t *testing.T) {
 func TestCreateAppShouldGeneratePrivateKey(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, _, _, _, ctxApp := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, _, _, _, ctxApp := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	expected := &persistence.App{
-		ID:            persistence.AppID{"the new app id"},
+		ID:            persistence.AppID{ID: "the new app id"},
 		Name:          "the new app name",
 		MaxAccounts:   99,
 		AllowedOrigin: "new app's origin",
@@ -133,9 +133,9 @@ func TestCreateAppShouldGeneratePrivateKey(t *testing.T) {
 func TestCreateAppShouldReturnSavedApp(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, _, _, _, ctxApp := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, _, _, _, ctxApp := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	expected := &persistence.App{
-		ID:            persistence.AppID{"the new app id"},
+		ID:            persistence.AppID{ID: "the new app id"},
 		Name:          "the new app name",
 		MaxAccounts:   99,
 		AllowedOrigin: "new app's origin",
@@ -196,7 +196,7 @@ func TestGetAppsReturnsAllAppsInAdminAppForAdminUser(t *testing.T) {
 		{},
 		{},
 	}
-	mockDB, _, _, _, ctxApp := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, _, _, _, ctxApp := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	mockDB.On("GetApps").Return(expected, nil)
 	apps := NewAppService(mockDB).NewAuthCtx(Authentication{
 		Account: persistence.Account{
@@ -216,14 +216,14 @@ func TestGetAppsReturnsOnlyThoseAppsTheUserIsAdminOf(t *testing.T) {
 	assert := assert.NewAssert(t)
 
 	uid, _ := uuid.NewV4()
-	authAccountID := persistence.AccountID{uid}
+	authAccountID := persistence.AccountID{UUID: uid}
 	expected := []*persistence.App{
 		{
 			Admins: []persistence.AccountID{authAccountID},
 		},
 		{},
 	}
-	mockDB, _, _, _, ctxApp := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, _, _, _, ctxApp := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	mockDB.On("GetApps").Return(expected, nil)
 	apps := NewAppService(mockDB).NewAuthCtx(Authentication{
 		Account: persistence.Account{
@@ -240,8 +240,8 @@ func TestGetAppsReturnsOnlyThoseAppsTheUserIsAdminOf(t *testing.T) {
 func TestUpdateAppNameRejectsUpdateOfUnknownApp(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, _, _, _, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
-	updateAppID := persistence.AppID{"does not exist"}
+	mockDB, _, _, _, _ := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	updateAppID := persistence.AppID{ID: "does not exist"}
 	mockDB.On("GetApp", updateAppID).Once().Return(nil)
 	err := NewAppService(mockDB).NewAuthCtx(Authentication{}).UpdateAppName(updateAppID, AppName{"new name"})
 
@@ -254,7 +254,7 @@ func TestUpdateAppNameRejectsUpdateOfUnknownApp(t *testing.T) {
 func TestUpdateAppNameRejectsUnauthenticatedUser(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, _, _, appID, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, _, _, appID, _ := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	resApp := &persistence.App{
 		ID:            appID,
 		Name:          "App Name",
@@ -275,7 +275,7 @@ func TestUpdateAppNameRejectsUnauthenticatedUser(t *testing.T) {
 func TestUpdateAppNameHandsOverPersistenceErrors(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, mockAppCtx, accountID, appID, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, mockAppCtx, accountID, appID, _ := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	resApp := &persistence.App{
 		ID:            appID,
 		Name:          "App Name",
@@ -303,7 +303,7 @@ func TestUpdateAppNameHandsOverPersistenceErrors(t *testing.T) {
 func TestUpdateAppNameSucceeds(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, mockAppCtx, accountID, appID, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, mockAppCtx, accountID, appID, _ := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	resApp := &persistence.App{
 		ID:            appID,
 		Name:          "App Name",
@@ -329,8 +329,8 @@ func TestUpdateAppNameSucceeds(t *testing.T) {
 func TestUpdateAppOriginRejectsUpdateOfUnknownApp(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, _, _, _, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
-	updateAppID := persistence.AppID{"does not exist"}
+	mockDB, _, _, _, _ := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	updateAppID := persistence.AppID{ID: "does not exist"}
 	mockDB.On("GetApp", updateAppID).Once().Return(nil)
 	err := NewAppService(mockDB).NewAuthCtx(Authentication{}).UpdateAppOrigin(updateAppID, AppOrigin{"new name"})
 
@@ -343,7 +343,7 @@ func TestUpdateAppOriginRejectsUpdateOfUnknownApp(t *testing.T) {
 func TestUpdateAppOriginRejectsUnauthenticatedUser(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, _, _, appID, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, _, _, appID, _ := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	resApp := &persistence.App{
 		ID:            appID,
 		Name:          "App Name",
@@ -364,7 +364,7 @@ func TestUpdateAppOriginRejectsUnauthenticatedUser(t *testing.T) {
 func TestUpdateAppOriginHandsOverPersistenceErrors(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, mockAppCtx, accountID, appID, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, mockAppCtx, accountID, appID, _ := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	resApp := &persistence.App{
 		ID:            appID,
 		Name:          "App Name",
@@ -392,7 +392,7 @@ func TestUpdateAppOriginHandsOverPersistenceErrors(t *testing.T) {
 func TestUpdateAppOriginSucceeds(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, mockAppCtx, accountID, appID, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, mockAppCtx, accountID, appID, _ := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	resApp := &persistence.App{
 		ID:            appID,
 		Name:          "App Name",
@@ -418,7 +418,7 @@ func TestUpdateAppOriginSucceeds(t *testing.T) {
 func TestDeleteAppFailsWhenAppDoesNotExist(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, _, accountID, appID, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, _, accountID, appID, _ := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	targetApp := &persistence.App{
 		ID:            appID,
 		Name:          "App Name",
@@ -443,7 +443,7 @@ func TestDeleteAppFailsWhenAppDoesNotExist(t *testing.T) {
 func TestDeleteAppFailsWhenUserIsNotAdmin(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, _, accountID, appID, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, _, accountID, appID, _ := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	targetApp := &persistence.App{
 		ID:            appID,
 		Name:          "App Name",
@@ -468,7 +468,7 @@ func TestDeleteAppFailsWhenUserIsNotAdmin(t *testing.T) {
 func TestDeleteAppSucceeds(t *testing.T) {
 	assert := assert.NewAssert(t)
 
-	mockDB, _, accountID, appID, _ := setupMocks(persistence.AppID{"0a791409-d58d-4175-ba02-2bdbdb8e6629"})
+	mockDB, _, accountID, appID, _ := setupMocks(persistence.AppID{ID: "0a791409-d58d-4175-ba02-2bdbdb8e6629"})
 	targetApp := &persistence.App{
 		ID:            appID,
 		Name:          "App Name",
@@ -556,7 +556,7 @@ func TestAppOriginValidationSucceeds(t *testing.T) {
 	assert.False(res.HasErrors(), "Expected no validation errors")
 }
 
-func TeotAppOriginValidationFails(t *testing.T) {
+func TestAppOriginValidationFails(t *testing.T) {
 	assert := assert.NewAssert(t)
 
 	ao := AppOrigin{

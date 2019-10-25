@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+	"golang.org/x/xerrors"
 	"fmt"
 	"net"
 	"net/http"
@@ -103,7 +105,10 @@ func (s *Server) Start(listenHost, listenPort string) error {
 	s.routes()
 	preloadAppsFile := os.Getenv("PRELOAD_APPS_FILE")
 	if preloadAppsFile != "" {
-		utils.PreloadApps(s.db, preloadAppsFile)
+		err := utils.PreloadApps(s.db, preloadAppsFile)
+		if err != nil {
+			return xerrors.Errorf("could not preload apps: %w", err)
+		}
 	}
 
 	listener, err := net.Listen("tcp", listenHost+":"+listenPort)
@@ -120,6 +125,9 @@ func (s *Server) Start(listenHost, listenPort string) error {
 }
 
 func (s *Server) Stop() {
-	s.srv.Shutdown(nil)
+	err := s.srv.Shutdown(context.Background())
+	if err != nil {
+		log.Error("Error shutting server down: %v", err)
+	}
 
 }

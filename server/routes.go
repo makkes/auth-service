@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	log "github.com/makkes/golib/logging"
 	"github.com/makkes/handlers"
 	"github.com/makkes/services.makk.es/auth/server/middleware"
 )
@@ -10,7 +11,10 @@ import (
 func handleVersion(v string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(v))
+		_, writeErr := w.Write([]byte(v))
+		if writeErr != nil {
+			log.Info("Error sending body: %v", writeErr)
+		}
 	}
 }
 

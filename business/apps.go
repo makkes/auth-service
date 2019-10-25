@@ -110,7 +110,7 @@ func (ctx AuthCtx) CreateApp(newApp AppCreation, admins []persistence.AccountID)
 		log.Error("Could not generate private key for JWT use: %s", err)
 		return nil, err
 	}
-	createdApp, err := ctx.svc.db.SaveApp(persistence.AppID{appID.String()}, newApp.Name, newApp.MaxAccounts, newApp.AllowedOrigin, persistence.MailTemplates{}, admins, *privKey)
+	createdApp, err := ctx.svc.db.SaveApp(persistence.AppID{ID: appID.String()}, newApp.Name, newApp.MaxAccounts, newApp.AllowedOrigin, persistence.MailTemplates{}, admins, *privKey)
 	if err != nil {
 		log.Error("Received unknown error when creating app %#v: %s", newApp, err)
 		return nil, fmt.Errorf("App could not created")

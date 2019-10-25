@@ -18,7 +18,7 @@ lint:
 	golangci-lint run
 
 .PHONY: test
-test:
+test: lint
 	go test ./...
 
 .PHONY: integration
