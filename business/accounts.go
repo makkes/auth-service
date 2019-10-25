@@ -99,13 +99,16 @@ func (ctx *AppContext) CreateAccount(u AccountCreation) (*persistence.Account, e
 		return nil, err
 	}
 	newUser := &persistence.Account{
-		ID:           persistence.AccountID{newID},
+		ID:           persistence.AccountID{UUID: newID},
 		Email:        u.Email,
 		Active:       u.Active,
 		PasswordHash: hash,
 		Roles:        u.Roles,
 	}
-	ctx.accountService.db.App(ctx.app.ID).SaveAccount(*newUser)
+	err = ctx.accountService.db.App(ctx.app.ID).SaveAccount(*newUser)
+	if err != nil {
+		return nil, err
+	}
 	if newUser.Active {
 		return newUser, nil
 	}
@@ -114,7 +117,10 @@ func (ctx *AppContext) CreateAccount(u AccountCreation) (*persistence.Account, e
 	if err != nil {
 		return nil, err
 	}
-	ctx.accountService.db.App(ctx.app.ID).SaveActivationToken(newUser.ID, activationToken.String())
+	err = ctx.accountService.db.App(ctx.app.ID).SaveActivationToken(newUser.ID, activationToken.String())
+	if err != nil {
+		return nil, err
+	}
 	err = ctx.accountService.mailer.SendActivationMail(newUser.Email, activationToken.String(), newUser.ID, ctx.app.MailTemplates.ActivateAccount)
 	if err != nil {
 		log.Error("Error sending activation mail: %s", err)
@@ -155,7 +161,13 @@ func (s *AccountService) ActivateAccount(appID persistence.AppID, activationToke
 		return ActivationError
 	}
 	account.Active = true
-	s.db.App(appID).SaveAccount(*account)
-	s.db.App(appID).DeleteActivationToken(account.ID)
+	err := s.db.App(appID).SaveAccount(*account)
+	if err != nil {
+		return err
+	}
+	err = s.db.App(appID).DeleteActivationToken(account.ID)
+	if err != nil {
+		return err
+	}
 	return nil
 }

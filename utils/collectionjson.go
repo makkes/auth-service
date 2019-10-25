@@ -89,7 +89,10 @@ func WriteAppsAsCollectionJSON(w http.ResponseWriter, baseURL string, apps []*pe
 
 	w.Header().Set("Content-Type", "application/vnd.collection+json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	w.Write(res)
+	_, writeErr := w.Write(res)
+	if writeErr != nil {
+		log.Info("Error sending body: %v", writeErr)
+	}
 }
 
 func WriteAccountsAsCollectionJSON(w http.ResponseWriter, baseURL string, accounts []*persistence.Account) {
@@ -124,5 +127,8 @@ func WriteAccountsAsCollectionJSON(w http.ResponseWriter, baseURL string, accoun
 
 	w.Header().Set("Content-Type", "application/vnd.collection+json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	w.Write(res)
+	_, writeErr := w.Write(res)
+	if writeErr != nil {
+		log.Info("Error sending body: %v", writeErr)
+	}
 }

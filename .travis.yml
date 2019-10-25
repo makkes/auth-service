@@ -8,6 +8,9 @@ os:
 services:
   - postgresql
 
+before_script:
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
+
 script:
     - make test
     - make integration-postgres
