@@ -96,7 +96,7 @@ func PreloadApps(db persistence.DB, fileName string) error {
 	adminApp := apps["admin"]
 	createErr := createApp(db, adminApp.(map[string]interface{}))
 	if createErr != nil {
-		return xerrors.Errorf("cannot create app: %w", err)
+		return xerrors.Errorf("cannot create app: %w", createErr)
 	}
 	otherApps := apps["others"]
 	if otherApps == nil {

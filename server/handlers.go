@@ -369,6 +369,7 @@ func (h *Handlers) CreateAccountHandler(w http.ResponseWriter, r *http.Request) 
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		log.Warn("Error creating account: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

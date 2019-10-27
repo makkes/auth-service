@@ -211,7 +211,7 @@ func TestCreateAccountFailsWhenAccountAlreadyExists(t *testing.T) {
 
 	mockDB, mockAppCtx, _, _, ctxApp := setupMocks(persistence.AppID{ID: "context app"})
 	mockDB.On("App", mock.Anything).Return(mockAppCtx)
-	mockAppCtx.On("GetAccountByEmail", "riker@startrek.io").Return(&persistence.Account{})
+	mockAppCtx.On("GetAccountByEmail", "riker@startrek.io").Return(&persistence.Account{Active: true})
 	as := NewAccountService(mockDB, nil)
 
 	acc, err := as.NewAppContext(ctxApp).CreateAccount(AccountCreation{
@@ -220,6 +220,36 @@ func TestCreateAccountFailsWhenAccountAlreadyExists(t *testing.T) {
 
 	assert.Nil(acc, "Expected nil account")
 	assert.Equal(err, EmailExistsError, "Expected an EmailExistsError")
+	mockDB.AssertExpectations(t)
+	mockAppCtx.AssertExpectations(t)
+
+}
+
+func TestCreateAccountSucceedsWhenAccountExistsButIsNotActivated(t *testing.T) {
+	assert := assert.NewAssert(t)
+
+	existingID := uuid.FromStringOrNil("9738155e-208a-4b5b-ba53-a2fab36510c3")
+	mockDB, mockAppCtx, _, _, ctxApp := setupMocks(persistence.AppID{ID: "context app"})
+	mockDB.On("App", mock.Anything).Return(mockAppCtx)
+	mockAppCtx.On("GetAccountByEmail", "riker@startrek.io").Return(
+		&persistence.Account{
+			Active: false,
+			ID:     persistence.AccountID{UUID: existingID},
+		})
+	mockAppCtx.On("SaveAccount", mock.MatchedBy(func(acc persistence.Account) bool {
+		return acc.ID.UUID == existingID
+	}))
+	mockAppCtx.On("SaveActivationToken", mock.AnythingOfType("persistence.AccountID"), mock.AnythingOfType("string")).Return(nil)
+	mockMailer := mockMailer()
+	mockMailer.On("SendActivationMail", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	as := NewAccountService(mockDB, mockMailer)
+
+	acc, err := as.NewAppContext(ctxApp).CreateAccount(AccountCreation{
+		Email: "riker@startrek.io",
+	})
+
+	assert.NotNil(acc, "Expected non-nil account")
+	assert.Nil(err, "Expected nil error")
 	mockDB.AssertExpectations(t)
 	mockAppCtx.AssertExpectations(t)
 

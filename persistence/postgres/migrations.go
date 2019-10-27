@@ -42,6 +42,8 @@ var (
 			account_id UUID NOT NULL,
 			token VARCHAR(256) NOT NULL
 		)`,
+		`ALTER TABLE accounts ADD CONSTRAINT accounts_email_key UNIQUE (app_id, email)`,
+		`ALTER TABLE activation_tokens ADD CONSTRAINT activation_tokens_pkey PRIMARY KEY (app_id, account_id)`,
 	}
 )
 
