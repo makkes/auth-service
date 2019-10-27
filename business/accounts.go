@@ -87,12 +87,18 @@ func (ctx *AppContext) CreateAccount(u AccountCreation) (*persistence.Account, e
 	//return nil, AppQuotaExceeded
 	//}
 	existingAcc := ctx.accountService.db.App(ctx.app.ID).GetAccountByEmail(u.Email)
-	if existingAcc != nil {
+	if existingAcc != nil && existingAcc.Active {
 		return nil, EmailExistsError
 	}
-	newID, err := uuid.NewV4()
-	if err != nil {
-		return nil, err
+	var newID uuid.UUID
+	var err error
+	if existingAcc != nil {
+		newID = existingAcc.ID.UUID
+	} else {
+		newID, err = uuid.NewV4()
+		if err != nil {
+			return nil, err
+		}
 	}
 	hash, err := persistence.NewHash(u.Password)
 	if err != nil {
