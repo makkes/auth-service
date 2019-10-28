@@ -296,6 +296,27 @@ func (h *Handlers) ActivateHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *Handlers) DeleteAccountHandler(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	accountID, err := persistence.NewAccountID(id)
+	if err != nil {
+		log.Error("could not create account id '%s': %s", id, err)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	auth := r.Context().Value(middleware.AuthContextKey).(business.Authentication)
+	err = h.accountService.DeleteAccount(auth.App.ID, auth.Account.ID, accountID)
+	if err != nil {
+		if err == business.DeletionForbiddenError {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		log.Error("Error deleting account '%s' in app '%s' from user '%s'", accountID, auth.App.ID, auth.App.ID)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
 func (h *Handlers) GetAccountHandler(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	accountID, err := persistence.NewAccountID(id)

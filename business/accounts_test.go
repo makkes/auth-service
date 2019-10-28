@@ -3,6 +3,7 @@ package business
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"fmt"
 	"testing"
 
 	"golang.org/x/xerrors"
@@ -382,6 +383,71 @@ func TestGetAccountWithDifferentUserThatIsAdminButInactiveReturnsNil(t *testing.
 
 	assert := assert.NewAssert(t)
 	assert.Nil(account, "Expected nil account")
+}
+
+func TestDeleteAccount(t *testing.T) {
+	type test struct {
+		name           string
+		authAccount    *persistence.Account
+		account        *persistence.Account
+		id             persistence.AccountID
+		deletionResult error
+		out            error
+	}
+	accountUUID, _ := uuid.NewV4()
+	deletionResult := fmt.Errorf("this is the deletion result")
+	tests := []test{
+		{
+			name:        "unknown authorized user",
+			authAccount: nil,
+			id:          persistence.AccountID{UUID: accountUUID},
+			out:         DeletionForbiddenError,
+		},
+		{
+			name:        "inactive authorized user",
+			authAccount: &persistence.Account{Active: false},
+			id:          persistence.AccountID{UUID: accountUUID},
+			out:         DeletionForbiddenError,
+		},
+		{
+			name:        "unknown account",
+			authAccount: &persistence.Account{Active: true},
+			account:     nil,
+			id:          persistence.AccountID{UUID: accountUUID},
+			out:         DeletionForbiddenError,
+		},
+		{
+			name:        "non-admin authorized user",
+			authAccount: &persistence.Account{Active: true, Roles: nil},
+			account:     &persistence.Account{Active: true},
+			id:          persistence.AccountID{UUID: accountUUID},
+			out:         DeletionForbiddenError,
+		},
+		{
+			name:           "admin authorized user",
+			authAccount:    &persistence.Account{Active: true, Roles: persistence.Roles{"admin"}},
+			account:        &persistence.Account{Active: true},
+			id:             persistence.AccountID{UUID: accountUUID},
+			deletionResult: deletionResult,
+			out:            deletionResult,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.NewAssert(t)
+			mockDB, mockAppCtx, _, appID, _ := setupMocks(persistence.AppID{ID: "context app"})
+			mockDB.On("App", mock.Anything).Return(mockAppCtx)
+			authAccountUUID, _ := uuid.NewV4()
+			authAccountID := persistence.AccountID{UUID: authAccountUUID}
+			mockAppCtx.On("GetAccount", authAccountID).Return(tt.authAccount)
+			mockAppCtx.On("GetAccount", tt.id).Return(tt.account)
+			mockAppCtx.On("DeleteAccount", tt.id).Return(tt.deletionResult)
+			as := NewAccountService(mockDB, nil)
+			err := as.DeleteAccount(appID, authAccountID, tt.id)
+			assert.Equal(err, tt.out, "Got unexpected error")
+		})
+	}
 }
 
 func TestGetAccountWithDifferentUserThatIsAdminReturnsAccount(t *testing.T) {

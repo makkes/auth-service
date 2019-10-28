@@ -28,6 +28,7 @@ func (s *Server) routes() {
 	authenticatedRoutes.HandleFunc("/account", http.HandlerFunc(s.handlers.GetCurrentAccountHandler)).Methods("GET")
 	authenticatedRoutes.HandleFunc("/accounts", http.HandlerFunc(s.handlers.GetAccountsHandler)).Methods("GET")
 	authenticatedRoutes.HandleFunc("/accounts/{id}", s.handlers.GetAccountHandler).Methods("GET")
+	authenticatedRoutes.HandleFunc("/accounts/{id}", s.handlers.DeleteAccountHandler).Methods("DELETE")
 	authenticatedRoutes.HandleFunc("/accounts/{id}/roles", s.handlers.GetRolesHandler).Methods("GET")
 	authenticatedRoutes.HandleFunc("/apps", s.handlers.CreateApp).Methods("POST")
 	authenticatedRoutes.HandleFunc("/apps", s.handlers.GetApps).Methods("GET")

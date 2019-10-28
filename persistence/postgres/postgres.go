@@ -28,6 +28,7 @@ const (
 	sqlQueryAccountByIDAndAppID    = `SELECT id, email, roles, pw_hash, active FROM accounts WHERE id = $1 AND app_id = $2`
 	sqlQueryAccountByEmailAndAppID = `SELECT id, email, roles, pw_hash, active FROM accounts WHERE email = $1 AND app_id = $2`
 	sqlQueryAccountsByAppID        = `SELECT id, email, roles, pw_hash, active FROM accounts WHERE app_id = $1`
+	sqlDeleteAccountByIDAndAppID   = `DELETE FROM accounts WHERE id = $1 AND app_id = $2`
 	sqlInsertActivationToken       = `INSERT INTO activation_tokens(app_id, account_id, token)
 		VALUES($1, $2, $3)
 		ON CONFLICT ON CONSTRAINT activation_tokens_pkey DO UPDATE SET token = $3`
@@ -201,10 +202,10 @@ func (ctx *PostgresAppContext) SaveAccount(account persistence.Account) error {
 	var err error
 	if existingAccount != nil {
 		ctx.db.log.Debug("Updating account %s", account.ID)
-		_, err = ctx.db.db.Exec(sqlUpdateAccount, account.ID.UUID.String(), ctx.appID.ID, account.Email, account.Roles, account.PasswordHash, account.Active)
+		_, err = ctx.db.db.Exec(sqlUpdateAccount, account.ID.String(), ctx.appID.ID, account.Email, account.Roles, account.PasswordHash, account.Active)
 	} else {
 		ctx.db.log.Debug("Inserting account %s", account.ID)
-		_, err = ctx.db.db.Exec(sqlInsertAccount, account.ID.UUID.String(), ctx.appID.ID, account.Email, account.Roles, account.PasswordHash, account.Active)
+		_, err = ctx.db.db.Exec(sqlInsertAccount, account.ID.String(), ctx.appID.ID, account.Email, account.Roles, account.PasswordHash, account.Active)
 	}
 	if err != nil {
 		return xerrors.Errorf("Error inserting or updating account %v: %w", account, err)
@@ -215,7 +216,7 @@ func (ctx *PostgresAppContext) SaveAccount(account persistence.Account) error {
 
 func (ctx *PostgresAppContext) GetAccount(id persistence.AccountID) *persistence.Account {
 	var account persistence.Account
-	err := ctx.db.db.QueryRow(sqlQueryAccountByIDAndAppID, id.UUID.String(), ctx.appID.ID).Scan(&account.ID, &account.Email, &account.Roles, &account.PasswordHash, &account.Active)
+	err := ctx.db.db.QueryRow(sqlQueryAccountByIDAndAppID, id.String(), ctx.appID.ID).Scan(&account.ID, &account.Email, &account.Roles, &account.PasswordHash, &account.Active)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			ctx.db.log.Error("Querying for account %s in app %s returned an error: %s", id, ctx.appID, err)
@@ -243,6 +244,14 @@ func (ctx *PostgresAppContext) GetAccounts() []*persistence.Account {
 		res = append(res, &account)
 	}
 	return res
+}
+
+func (ctx *PostgresAppContext) DeleteAccount(id persistence.AccountID) error {
+	_, err := ctx.db.db.Exec(sqlDeleteAccountByIDAndAppID, id.String(), ctx.appID.ID)
+	if err != nil {
+		return xerrors.Errorf("error deleting account '%s' of app '%s': %w", id, ctx.appID, err)
+	}
+	return nil
 }
 
 func (ctx *PostgresAppContext) UpdateAppName(newName string) error {

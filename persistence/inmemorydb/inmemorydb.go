@@ -53,6 +53,11 @@ func (ctx *InMemoryAppContext) GetAccounts() []*persistence.Account {
 	return res
 }
 
+func (ctx *InMemoryAppContext) DeleteAccount(id persistence.AccountID) error {
+	delete(ctx.db.accounts[ctx.appID], id)
+	return nil
+}
+
 func (ctx *InMemoryAppContext) GetActivationToken(id persistence.AccountID) string {
 	for token, accountID := range ctx.db.activationTokens {
 		if *accountID == id {

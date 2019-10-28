@@ -332,6 +332,7 @@ type AppContext interface {
 	SaveAccount(account Account) error
 	GetAccount(id AccountID) *Account
 	GetAccounts() []*Account
+	DeleteAccount(id AccountID) error
 	UpdateAppName(newName string) error
 	UpdateAppOrigin(newOrigin string) error
 }

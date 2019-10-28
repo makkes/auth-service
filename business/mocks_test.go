@@ -88,6 +88,14 @@ func (m *MockAppCtx) SaveAccount(account persistence.Account) error {
 	return nil
 }
 
+func (m *MockAppCtx) DeleteAccount(id persistence.AccountID) error {
+	args := m.Called(id)
+	if len(args) > 0 {
+		return args.Get(0).(error)
+	}
+	return nil
+}
+
 func (m *MockAppCtx) SaveActivationToken(accountID persistence.AccountID, token string) error {
 	args := m.Called(accountID, token)
 	if args.Get(0) == nil {

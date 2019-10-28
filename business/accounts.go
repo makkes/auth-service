@@ -18,6 +18,7 @@ import (
 var ActivationError = errors.New("Account could not be activated")
 var EmailExistsError = errors.New("An account with the email address already exists")
 var AppQuotaExceeded = errors.New("Quota for this application has been reached")
+var DeletionForbiddenError = xerrors.New("User is not allowed to delete accounts")
 
 type AccountCreation struct {
 	Email    string `json:"email"`
@@ -143,6 +144,21 @@ func (s *AccountService) GetAccounts(appID persistence.AppID, authID persistence
 		return s.db.App(appID).GetAccounts()
 	}
 	return []*persistence.Account{account}
+}
+
+func (s *AccountService) DeleteAccount(appID persistence.AppID, authID persistence.AccountID, id persistence.AccountID) error {
+	appCtx := s.db.App(appID)
+	authenticatedUser := appCtx.GetAccount(authID)
+	if authenticatedUser == nil || !authenticatedUser.Active {
+		return DeletionForbiddenError
+	}
+
+	accountToDelete := appCtx.GetAccount(id)
+	if accountToDelete != nil && authenticatedUser.HasRole("admin") {
+		return appCtx.DeleteAccount(id)
+	}
+
+	return DeletionForbiddenError
 }
 
 func (s *AccountService) GetAccount(appID persistence.AppID, authenticatedUserID persistence.AccountID, id persistence.AccountID) *persistence.Account {

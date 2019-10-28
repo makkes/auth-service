@@ -26,7 +26,8 @@
         "users": [
             {"id": "66efbaf2-3417-4df4-a477-239af136e0d3", "email": "mail@makk.es", "password": "makkes", "roles": []},
             {"id": "b1ee9d2c-d252-4c45-a524-48e3d6da24c1", "email": "mail+2@makk.es", "password": "test", "roles": []},
-            {"id": "e8fc7d47-aba3-40db-afdb-5caddd6fd9dd", "email": "admin@example.org", "password": "admin", "roles": ["admin"]}
+            {"id": "e8fc7d47-aba3-40db-afdb-5caddd6fd9dd", "email": "admin@example.org", "password": "admin", "roles": ["admin"]},
+            {"id": "7AEDFD0E-513A-44F2-9C16-FCFD5A08DD61", "email": "deleteme@example.org", "password": "deleteme", "roles": []}
         ]
     },{
         "id": "c7d1a9d5-c211-4fd6-a275-393c8750cd9e",
