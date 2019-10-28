@@ -44,6 +44,7 @@ var (
 		)`,
 		`ALTER TABLE accounts ADD CONSTRAINT accounts_email_key UNIQUE (app_id, email)`,
 		`ALTER TABLE activation_tokens ADD CONSTRAINT activation_tokens_pkey PRIMARY KEY (app_id, account_id)`,
+		`ALTER TABLE activation_tokens ADD COLUMN expiration TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()+interval'36 hours'`,
 	}
 )
 
