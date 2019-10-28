@@ -32,7 +32,7 @@ const (
 	sqlInsertActivationToken       = `INSERT INTO activation_tokens(app_id, account_id, token)
 		VALUES($1, $2, $3)
 		ON CONFLICT ON CONSTRAINT activation_tokens_pkey DO UPDATE SET token = $3`
-	sqlQueryActivationToken  = `SELECT token FROM activation_tokens WHERE app_id = $1 and account_id = $2`
+	sqlQueryActivationToken  = `SELECT token FROM activation_tokens WHERE app_id = $1 and account_id = $2 AND expiration > now()`
 	sqlDeleteActivationToken = `DELETE FROM activation_tokens WHERE account_id = $1`
 )
 
