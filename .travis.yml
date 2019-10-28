@@ -15,5 +15,9 @@ script:
     - make test || travis_terminate 1;
     - make integration-postgres || travis_terminate 1;
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1;
-    - [ $TRAVIS_BRANCH == "master" ] && [ $TRAVIS_PULL_REQUEST == "false" ] && ( make image-build || travis_terminate 1 )
-    - [ $TRAVIS_BRANCH == "master" ] && [ $TRAVIS_PULL_REQUEST == "false" ] && ( make image-push || travis_terminate 1 )
+    - if [ $TRAVIS_BRANCH == "master" ] && [ $TRAVIS_PULL_REQUEST == "false" ] ; then
+        make image-build || travis_terminate 1;
+      fi
+    - if [ $TRAVIS_BRANCH == "master" ] && [ $TRAVIS_PULL_REQUEST == "false" ] ; then
+        make image-push || travis_terminate 1;
+      fi
