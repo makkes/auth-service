@@ -110,7 +110,7 @@ func TestDBCreation(t *testing.T) {
 	// the compiler ascertains for us that PostgresDB implements persistence.DB
 	func(db persistence.DB) {}(db)
 
-	assert.NotNil(db, "Dynamo DB is nil")
+	assert.NotNil(db, "DB is nil")
 }
 
 func TestGetAppReturnsNilForUnknownApp(t *testing.T) {

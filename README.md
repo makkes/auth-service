@@ -17,13 +17,3 @@ The startup configuration is provided via environment variables:
 |`SERVE_PORT`|The port used by users to reach the service|empty
 |`SERVE_HOST`|The host used by users to reach the service|`localhost`
 |`SERVE_PROTOCOL`|One of `http` or `https`|`https`
-|`DB_TYPE`|The persistence backend to use, one of `postgres`, `dynamodb`, `inmemory`|`postgres`
-
-### DynamoDB Backend Configuration
-
-The DynamoDB backend is configured via standard AWS environment variables; see
-https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html?shortFooter=true
-for an explanation.
-
-The table to be used is configured via the environment variable
-`DYNAMODB_TABLE`, the default for that value is `auth`.

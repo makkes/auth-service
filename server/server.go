@@ -2,11 +2,12 @@ package server
 
 import (
 	"context"
-	"golang.org/x/xerrors"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
+
+	"golang.org/x/xerrors"
 
 	"github.com/makkes/services.makk.es/auth/persistence/postgres"
 
@@ -16,8 +17,6 @@ import (
 	"github.com/makkes/services.makk.es/auth/business"
 	"github.com/makkes/services.makk.es/auth/mailer"
 	"github.com/makkes/services.makk.es/auth/persistence"
-	"github.com/makkes/services.makk.es/auth/persistence/dynamodb"
-	"github.com/makkes/services.makk.es/auth/persistence/inmemorydb"
 	"github.com/makkes/services.makk.es/auth/utils"
 )
 
@@ -45,37 +44,14 @@ func getEnvOrDefault(envName, defaultVal string) string {
 
 func NewServer(baseURL string) *Server {
 	router := mux.NewRouter()
-	dbTypes := map[string]func() (persistence.DB, error){
-		"dynamodb": func() (persistence.DB, error) {
-			dynamodbTable := os.Getenv("DYNAMODB_TABLE")
-			if dynamodbTable == "" {
-				dynamodbTable = "auth"
-			}
-			return dynamodb.NewDynamoDB(dynamodbTable)
-		},
-		"inmemory": func() (persistence.DB, error) {
-			return inmemorydb.NewInMemoryDB()
-		},
-		"postgres": func() (persistence.DB, error) {
-			user := getEnvOrDefault("POSTGRES_USER", "auth")
-			password := getEnvOrDefault("POSTGRES_PASSWORD", "auth")
-			dbName := getEnvOrDefault("POSTGRES_DB_NAME", "auth")
-			host := getEnvOrDefault("POSTGRES_HOST", "localhost")
-			port := getEnvOrDefault("POSTGRES_PORT", "5432")
-			sslMode := getEnvOrDefault("POSTGRES_SSL_MODE", "disable")
-			return postgres.NewPostgresDB(user, password, dbName, host, port, sslMode)
-		},
-	}
 
-	dbType := os.Getenv("DB_TYPE")
-	if dbType == "" {
-		dbType = "postgres"
-	}
-	newDB := dbTypes[dbType]
-	if newDB == nil {
-		panic(fmt.Sprintf("'%s' is not a valid database type", dbType))
-	}
-	db, err := newDB()
+	user := getEnvOrDefault("POSTGRES_USER", "auth")
+	password := getEnvOrDefault("POSTGRES_PASSWORD", "auth")
+	dbName := getEnvOrDefault("POSTGRES_DB_NAME", "auth")
+	host := getEnvOrDefault("POSTGRES_HOST", "localhost")
+	port := getEnvOrDefault("POSTGRES_PORT", "5432")
+	sslMode := getEnvOrDefault("POSTGRES_SSL_MODE", "disable")
+	db, err := postgres.NewPostgresDB(user, password, dbName, host, port, sslMode)
 	if err != nil {
 		panic(fmt.Sprintf("Could not create db: %s", err.Error()))
 	}
