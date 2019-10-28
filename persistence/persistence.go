@@ -10,12 +10,9 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"strings"
 
 	"golang.org/x/xerrors"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/gofrs/uuid"
 	log "github.com/makkes/golib/logging"
 	"golang.org/x/crypto/pbkdf2"
@@ -23,29 +20,6 @@ import (
 
 type AccountID struct {
 	uuid.UUID
-}
-
-func (id AccountID) MarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
-	av.S = aws.String("account:" + id.UUID.String())
-	return nil
-}
-
-func (id *AccountID) UnmarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
-	if av.S == nil {
-		return nil
-	}
-	idArr := strings.Split(*av.S, ":")
-	if len(idArr) != 2 || idArr[0] != "account" {
-		log.Info("Could not parse account ID %s", *av.S)
-		return fmt.Errorf("Error parsing account ID %s", *av.S)
-	}
-	uid, err := uuid.FromString(idArr[1])
-	if err != nil {
-		log.Info("Could not parse account ID %s: %s", idArr[1], err)
-		return err
-	}
-	id.UUID = uid
-	return nil
 }
 
 type Hash struct {
@@ -133,10 +107,10 @@ func (r Roles) Value() (driver.Value, error) {
 }
 
 type Account struct {
-	ID           AccountID `json:"id" dynamodbav:"subID"`
+	ID           AccountID `json:"id"`
 	Email        string    `json:"email"`
 	Roles        Roles     `json:"roles"`
-	PasswordHash Hash      `json:"-" dynamodbav:"passwordHash"`
+	PasswordHash Hash      `json:"-"`
 	Active       bool
 }
 
@@ -146,19 +120,6 @@ type AppID struct {
 
 func (id AppID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(id.ID)
-}
-
-func (id AppID) MarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
-	av.S = aws.String(id.ID)
-	return nil
-}
-
-func (id *AppID) UnmarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
-	if av.S == nil {
-		return nil
-	}
-	id.ID = *av.S
-	return nil
 }
 
 type MailTemplates struct {
@@ -230,23 +191,6 @@ func (key AppKey) EncodePublicKey() string {
 	return string(pubPEM)
 }
 
-func (key AppKey) MarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
-	av.B = x509.MarshalPKCS1PrivateKey(&key.Key)
-	return nil
-}
-
-func (key *AppKey) UnmarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
-	if av.B == nil {
-		return nil
-	}
-	parsedKey, err := x509.ParsePKCS1PrivateKey(av.B)
-	if err != nil {
-		return err
-	}
-	key.Key = *parsedKey
-	return nil
-}
-
 type AppAdmins []AccountID
 
 // Scan makes AppAdmins implement the sql.Scanner interface
@@ -274,14 +218,14 @@ func (a AppAdmins) Value() (driver.Value, error) {
 }
 
 type App struct {
-	ID            AppID         `json:"id" dynamodbav:"appID"`
+	ID            AppID         `json:"id"`
 	Name          string        `json:"name"`
 	MaxAccounts   int           `json:"maxAccounts"`
 	AllowedOrigin string        `json:"allowedOrigin"`
 	MailTemplates MailTemplates `json:"mailTemplates"`
 	Admins        AppAdmins     `json:"admins"`
-	PrivateKey    AppKey        `json:"-" dynamodbav:"privateKey"`
-	PublicKey     string        `json:"publicKey" dynamodbav:"-"`
+	PrivateKey    AppKey        `json:"-"`
+	PublicKey     string        `json:"publicKey"`
 }
 
 func (id AppID) String() string {
