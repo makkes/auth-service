@@ -305,7 +305,16 @@ func (h *Handlers) DeleteAccountHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	auth := r.Context().Value(middleware.AuthContextKey).(business.Authentication)
-	h.accountService.DeleteAccount(auth.App.ID, auth.Account.ID, accountID)
+	err = h.accountService.DeleteAccount(auth.App.ID, auth.Account.ID, accountID)
+	if err != nil {
+		if err == business.DeletionForbiddenError {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		log.Error("Error deleting account '%s' in app '%s' from user '%s'", accountID, auth.App.ID, auth.App.ID)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *Handlers) GetAccountHandler(w http.ResponseWriter, r *http.Request) {
