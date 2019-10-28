@@ -421,6 +421,10 @@ func (d *DynamoDBAppContext) GetAccounts() []*persistence.Account {
 	return accounts
 }
 
+func (d *DynamoDBAppContext) DeleteAccount(id persistence.AccountID) error {
+	return xerrors.New("This function is not implemented on DynamoDB")
+}
+
 func (d *DynamoDBAppContext) SaveActivationToken(accountID persistence.AccountID, token string) error {
 	out, err := d.db.svc.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: d.db.table,

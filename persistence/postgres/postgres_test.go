@@ -237,6 +237,38 @@ func TestGetAccounts(t *testing.T) {
 	assert.True(len(accounts) == 3, fmt.Sprintf("We expected three accounts to be found but found %d (%v)", len(accounts), accounts))
 }
 
+func TestDeleteAccount(t *testing.T) {
+	tests := []struct {
+		name string
+		in   persistence.AccountID
+		err  bool
+	}{
+		{
+			name: "non-existing account",
+			in:   persistence.AccountID{UUID: uuid.FromStringOrNil("99652960-DD84-457A-826E-73794CFB3208")},
+			err:  false,
+		},
+		{
+			name: "success",
+			in:   persistence.AccountID{UUID: uuid.FromStringOrNil("7AEDFD0E-513A-44F2-9C16-FCFD5A08DD61")},
+			err:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.NewStrict(t)
+			appCtx := db.App(persistence.AppID{ID: "c04aac4e-6185-43db-9054-13b0774dae9e"})
+			out := appCtx.DeleteAccount(tt.in)
+			if tt.err {
+				assert.NotNil(out, "Expected non-nil error")
+			} else {
+				assert.Nil(out, "Expected nil error")
+			}
+		})
+	}
+}
+
 func randomAccountID() persistence.AccountID {
 	uid, err := uuid.NewV4()
 	if err != nil {
