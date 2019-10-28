@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	tokenExpiration    = 87600 * time.Hour
+	tokenExpiration    = 1 * time.Hour
 	refreshGracePeriod = 5 * time.Minute
 )
 

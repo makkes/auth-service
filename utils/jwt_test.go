@@ -71,7 +71,7 @@ func TestJWTCreationAndParsing(t *testing.T) {
 	assert.Nil(err, fmt.Sprintf("Unexpected error: %s", err))
 	assert.Equal(claims.Issuer, appID.String(), "Unexpected issuer in JWT")
 	assert.Equal(claims.Subject, accID.String(), "Unexpected subject in JWT")
-	assert.Equal(claims.ExpiresAt, now.Add(87600*time.Hour).Unix(), "Unexpected exp in JWT")
+	assert.Equal(claims.ExpiresAt, now.Add(1*time.Hour).Unix(), "Unexpected exp in JWT")
 }
 
 func TestJWTParsingAnExpiredToken(t *testing.T) {
