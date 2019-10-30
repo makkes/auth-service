@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"testing"
+	"time"
 
 	"golang.org/x/xerrors"
 
@@ -485,7 +486,13 @@ func TestGetAccountWithInactiveUserReturnsNil(t *testing.T) {
 
 func TestGetAccountWithActiveUserReturnsAccount(t *testing.T) {
 	mockDB, mockAppCtx, accountID, appID, _ := setupMocks(persistence.AppID{ID: "context app"})
-	activeAccount := persistence.Account{ID: accountID, Active: true}
+	activeAccount := persistence.Account{
+		ID:        accountID,
+		Active:    true,
+		Email:     "user@example.org",
+		Roles:     persistence.Roles{"editor", "user"},
+		UpdatedAt: time.Now(),
+	}
 	mockDB.On("App", mock.Anything).Return(mockAppCtx)
 	mockAppCtx.On("GetAccount", accountID).Return(&activeAccount)
 	as := NewAccountService(mockDB, nil)

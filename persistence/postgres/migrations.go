@@ -44,7 +44,17 @@ var (
 		)`,
 		`ALTER TABLE accounts ADD CONSTRAINT accounts_email_key UNIQUE (app_id, email)`,
 		`ALTER TABLE activation_tokens ADD CONSTRAINT activation_tokens_pkey PRIMARY KEY (app_id, account_id)`,
-		`ALTER TABLE activation_tokens ADD COLUMN expiration TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()+interval'36 hours'`,
+		`ALTER TABLE activation_tokens ADD COLUMN expiration TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()+INTERVAL'36 hours'`,
+		`CREATE OR REPLACE FUNCTION trigger_set_timestamp() RETURNS TRIGGER AS $$
+		BEGIN
+		  NEW.updated_at = NOW();
+		  RETURN NEW;
+		END;
+		$$ LANGUAGE plpgsql`,
+		`ALTER TABLE apps ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()`,
+		`CREATE TRIGGER set_apps_update_time BEFORE UPDATE ON apps FOR EACH ROW EXECUTE PROCEDURE trigger_set_timestamp()`,
+		`ALTER TABLE accounts ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()`,
+		`CREATE TRIGGER set_accounts_update_time BEFORE UPDATE ON accounts FOR EACH ROW EXECUTE PROCEDURE trigger_set_timestamp()`,
 	}
 )
 
