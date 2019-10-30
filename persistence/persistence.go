@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"time"
 
 	"golang.org/x/xerrors"
 
@@ -111,7 +112,8 @@ type Account struct {
 	Email        string    `json:"email"`
 	Roles        Roles     `json:"roles"`
 	PasswordHash Hash      `json:"-"`
-	Active       bool
+	Active       bool      `json:"active"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type AppID struct {

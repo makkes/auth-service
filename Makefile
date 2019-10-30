@@ -27,7 +27,11 @@ integration:
 
 .PHONY: integration-postgres
 integration-postgres:
-	go test -race -tags=postgres ./...
+	go test -count=1 -race -tags=postgres ./...
+
+.PHONY: integration-postgres-clean
+integration-postgres-clean:
+	go test -race -count=1 -tags=postgres ./persistence/postgres -args -bootstrap-database
 
 .PHONY: clean
 clean:

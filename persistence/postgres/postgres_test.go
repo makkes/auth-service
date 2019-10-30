@@ -201,6 +201,7 @@ func TestGetAccountReturnsAccount(t *testing.T) {
 	assert.Equal(account.Roles[0], "admin", "roles are different")
 	assert.Equal(account.Email, "admin@example.org", "email is different")
 	assert.True(account.Active, "account should be active")
+	assert.True(account.UpdatedAt != time.Time{}, "updatedAt isn't set")
 	assert.Equal(len(account.PasswordHash.Hash), 32, "passwordHash doesn't have expected size")
 }
 
@@ -223,10 +224,32 @@ func TestGetAccountByEmailIsNil(t *testing.T) {
 func TestGetAccountByEmail(t *testing.T) {
 	assert := assert.NewStrict(t)
 
+	uid := uuid.FromStringOrNil("66efbaf2-3417-4df4-a477-239af136e0d3")
 	account := db.App(persistence.AppID{ID: "c04aac4e-6185-43db-9054-13b0774dae9e"}).GetAccountByEmail("mail@makk.es")
 
 	assert.NotNil(account, "Account was not retrieved")
-	assert.Equal(account.Email, "mail@makk.es", "Account has unexpected email address")
+	assert.NotNil(account, "Expected to get an account")
+	assert.Equal(account.ID, persistence.AccountID{UUID: uid}, "ID is different")
+	assert.Equal(account.Roles[0], "editor", "roles are different")
+	assert.Equal(len(account.Roles), 1, "role count is different")
+	assert.Equal(account.Email, "mail@makk.es", "email is different")
+	assert.True(account.Active, "account should be active")
+	assert.True(account.UpdatedAt != time.Time{}, "updatedAt isn't set")
+	assert.Equal(len(account.PasswordHash.Hash), 32, "passwordHash doesn't have expected size")
+}
+
+func TestSaveAccountShouldSetUpdatedAt(t *testing.T) {
+	assert := assert.NewStrict(t)
+
+	appCtx := db.App(persistence.AppID{ID: "c04aac4e-6185-43db-9054-13b0774dae9e"})
+	accountBefore := appCtx.GetAccountByEmail("mail@makk.es")
+
+	err := appCtx.SaveAccount(*accountBefore)
+	assert.Nil(err, "Expected no error")
+
+	accountAfter := appCtx.GetAccountByEmail("mail@makk.es")
+
+	assert.True(accountAfter.UpdatedAt.After(accountBefore.UpdatedAt), "updatedAt was not updated")
 }
 
 func TestGetAccounts(t *testing.T) {

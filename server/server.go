@@ -92,7 +92,7 @@ func (s *Server) Start(listenHost, listenPort string) error {
 		return fmt.Errorf("Error starting HTTP server %s", err)
 	}
 	log.Info("Auth Service %s listening on %s:%s serving %s\n", version, listenHost, listenPort, s.baseURL)
-	s.srv = &http.Server{Handler: handlers.LoggingHandler(os.Stdout, s.router)}
+	s.srv = &http.Server{Handler: handlers.CombinedLoggingHandler(os.Stdout, s.router)}
 	err = s.srv.Serve(listener)
 	if err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("%s", err)
