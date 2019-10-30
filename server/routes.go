@@ -1,6 +1,8 @@
 package server
 
 import (
+	"bytes"
+	"html/template"
 	"net/http"
 
 	log "github.com/makkes/golib/logging"
@@ -8,10 +10,28 @@ import (
 	"github.com/makkes/services.makk.es/auth/server/middleware"
 )
 
+const versionPageTmpl = `<!DOCTYPE html>
+<html>
+	<head>
+		<title>Auth Service {{.}}</title>
+	</head>
+	<body>
+		<a href="https://github.com/makkes-services/auth-service/commit/{{.}}">{{.}}</a>
+	</body>
+</html>
+`
+
 func handleVersion(v string) func(http.ResponseWriter, *http.Request) {
+	tmpl := template.Must(template.New("version").Parse(versionPageTmpl))
+	var pageBytes bytes.Buffer
+	err := tmpl.Execute(&pageBytes, v)
+	if err != nil {
+		panic(err)
+	}
+	page := pageBytes.Bytes()
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		_, writeErr := w.Write([]byte(v))
+		_, writeErr := w.Write(page)
 		if writeErr != nil {
 			log.Info("Error sending body: %v", writeErr)
 		}
