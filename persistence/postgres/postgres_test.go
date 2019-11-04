@@ -18,6 +18,7 @@ import (
 	"time"
 
 	log "github.com/makkes/golib/logging"
+	"golang.org/x/xerrors"
 
 	"github.com/gofrs/uuid"
 	"github.com/makkes/assert"
@@ -37,6 +38,21 @@ var (
 	bootstrapDatabase = flag.Bool("bootstrap-database", false, "")
 )
 
+func waitForDatabase(container string) error {
+	var err error
+	for try := 0; try < 10; try++ {
+		cmdCtx, cmdCancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cmdCancel()
+		cmd := exec.CommandContext(cmdCtx, "docker", "exec", containerName, "psql", "-U", "postgres", "-c", "select version()")
+		err = cmd.Run()
+		if err == nil {
+			return nil
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	return xerrors.Errorf("could not check database connectivity: %w", err)
+}
+
 func startDatabase() {
 	mathrand.Seed(time.Now().UnixNano())
 	rnd := make([]byte, 3)
@@ -49,7 +65,14 @@ func startDatabase() {
 	cmd := exec.CommandContext(cmdCtx, "docker", "run", "-d", "--name", containerName, "-p", containerPort+":5432", "postgres:12")
 	err := cmd.Run()
 	if err != nil {
+		stopDatabase()
 		fmt.Fprintf(os.Stderr, "Error starting database container: %s\n", err)
+		os.Exit(1)
+	}
+	err = waitForDatabase(containerName)
+	if err != nil {
+		stopDatabase()
+		fmt.Fprintf(os.Stderr, "Error waiting for database container: %s\n", err)
 		os.Exit(1)
 	}
 }
@@ -77,9 +100,8 @@ func TestMain(m *testing.M) {
 
 	if *bootstrapDatabase {
 		startDatabase()
-		time.Sleep(2 * time.Second)
 	}
-
+	
 	var err error
 	db, err = postgres.NewPostgresDB("postgres", "", "postgres", "localhost", containerPort, "disable")
 	if err != nil {
