@@ -5,11 +5,13 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-
+	log "github.com/makkes/golib/logging"
 	"golang.org/x/xerrors"
 )
 
 const (
+	sqlAcquireLock             = `select pg_try_advisory_lock(1)`
+	sqlReleaseLock             = `select pg_advisory_unlock(1)`
 	sqlMigrationsTableCreation = `CREATE TABLE migrations(
 		id INTEGER PRIMARY KEY NOT NULL,
 		applied TIMESTAMP WITH TIME ZONE NOT NULL
@@ -63,10 +65,51 @@ type migration struct {
 	Applied time.Time
 }
 
-func migrate(db *sql.DB) error {
+func acquireLock(db *sql.DB) (bool, error) {
+	var success bool
+	err := db.QueryRow(sqlAcquireLock).Scan(&success)
+	if err != nil {
+		return false, err
+	}
+	return success, nil
+}
+
+func releaseLock(db *sql.DB) error {
+	var success bool
+	err := db.QueryRow(sqlReleaseLock).Scan(&success)
+	if err != nil {
+		return err
+	}
+	if !success {
+		return xerrors.New("lock release failed for unknown reason")
+	}
+	return nil
+
+}
+
+func migrate(db *sql.DB, log log.Logger) error {
+	var err error
+	success, err := acquireLock(db)
+	if err != nil {
+		return xerrors.Errorf("could not acquire lock: %w", err)
+	}
+	if !success {
+		// another node has acquired the lock to execute migrations so we just return here
+		return nil
+	}
+
+	log.Info("Running DB migrations")
+	defer func() {
+		log.Info("DB migrations finished")
+		if err := releaseLock(db); err != nil {
+			log.Error("Could not release migration lock: %v", err)
+		}
+
+	}()
+
 	latestMigrationIndex := -1
 	var latestMigration migration
-	err := db.QueryRow("SELECT * FROM migrations ORDER BY id DESC LIMIT 1").Scan(&(latestMigration.ID), &(latestMigration.Applied))
+	err = db.QueryRow("SELECT * FROM migrations ORDER BY id DESC LIMIT 1").Scan(&(latestMigration.ID), &(latestMigration.Applied))
 	if err != nil {
 		if pqError, ok := err.(*pq.Error); ok && pqError.Code == "42P01" {
 			creationErr := createMigrationsTable(db)
