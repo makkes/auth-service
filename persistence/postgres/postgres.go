@@ -54,7 +54,7 @@ func NewPostgresDB(user, password, dbName, host, port, sslMode string) (*Postgre
 		return nil, err
 	}
 
-	err = migrate(db)
+	err = migrate(db, logger)
 	if err != nil {
 		return nil, xerrors.Errorf("could not apply DB migrations: %w", err)
 	}
